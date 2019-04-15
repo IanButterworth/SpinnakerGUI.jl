@@ -84,8 +84,9 @@ function gui(;timerInterval::AbstractFloat=1/60)
     clear_color = Cfloat[0.45, 0.55, 0.60, 1.00]
 
     looptime = 0.0
-    gui_timer = Timer(0,interval=timerInterval)
+    guiTimer = Timer(0,interval=timerInterval)
     while !GLFW.WindowShouldClose(window)
+        gui_open = true
         t_before = time()
         io = CImGui.GetIO()
 
@@ -138,12 +139,13 @@ function gui(;timerInterval::AbstractFloat=1/60)
         GLFW.SwapBuffers(window)
 
         if time()-t_before < timerInterval
-            wait(gui_timer)
+            wait(guiTimer)
         else
             yield()
         end
     end
-    close(gui_timer)
+    close(guiTimer)
+    guiTimer = nothing
     # cleanup
     ImGui_ImplOpenGL3_Shutdown()
     ImGui_ImplGlfw_Shutdown()

@@ -20,7 +20,7 @@ control_no_bring_to_front = false
 Show control window with camera info and controls.
 """
 function ShowControlWindow(p_open::Ref{Bool})
-    global cam, camImage
+    global cam, camImage, camRunning
     global camSettings, camGPIO
 
     # Control window
@@ -72,10 +72,10 @@ function ShowControlWindow(p_open::Ref{Bool})
         @c CImGui.Checkbox("Auto", &ctrl_auto)
         CImGui.SameLine()
         once = CImGui.Button("Auto once")
-        if ctrl_auto
-            camSettings.exposureAuto = :continuous
-        elseif once
+        if once || (camSettings.exposureAuto == :once) # Keep `once` if pending
             camSettings.exposureAuto = :once
+        elseif ctrl_auto
+            camSettings.exposureAuto = :continuous
         elseif !ctrl_auto
             camSettings.exposureAuto = :off
             camSettings.exposureTime = ctrl_exposure
@@ -86,11 +86,13 @@ function ShowControlWindow(p_open::Ref{Bool})
             if CImGui.Button("Pause",(100,100))
                 stop!(cam)
                 ctrl_playing = false
+                camRunning = false
             end
         else
             if CImGui.Button("Run",(100,100))
                 start!(cam)
                 ctrl_playing = true
+                camRunning = true
             end
         end
     end

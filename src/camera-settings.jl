@@ -1,5 +1,4 @@
 
-
 Base.@kwdef mutable struct information
     modelName::String = ""
     deviceSerialNumber::String = ""
@@ -77,39 +76,43 @@ Base.@kwdef mutable struct GPIOLimits
 end
 
 function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
-    global camSettings, camGPIO
-    update_timer = Timer(0,interval=timerInterval)
-    lastCamSettings = nothing
-    lastCamGPIO = nothing
+    global camSettings, camSettingsLimits
+    global camGPIO, camGPIOLimits
+
+    updateTimer = Timer(0,interval=timerInterval)
+    lastCamSettings = deepcopy(camSettings)
+    lastCamGPIO = deepcopy(camGPIO)
     while gui_open
         t_before = time()
-        if camSettings != lastCamSettings
-            @show "Updating camsettings"
-            #Update camSettings
-            if camSettings.exposureMode == :off
+        if (camSettings.exposureAuto != lastCamSettings.exposureAuto) || (camSettings.exposureTime != lastCamSettings.exposureTime)
+            if camSettings.exposureAuto == :off
                 exposure!(cam,camSettings.exposureTime)
-            elseif camSettings.exposureMode == :once
+            elseif camSettings.exposureAuto == :once
                 ex = exposure!(cam)
                 camSettings.exposureTime = ex
-                exposure!(cam,ex)
-            elseif camSettings.exposureMode == :continuous
+                exposure!(cam,ex) # Required to set cam back to fixed exposure
+                camSettings.exposureAuto = :off
+            elseif camSettings.exposureAuto == :continuous
                 ex = exposure!(cam)
                 camSettings.exposureTime = ex
             end
-
-            lastCamSettings = camSettings
+            lastCamSettings.exposureAuto = camSettings.exposureAuto
+            lastCamSettings.exposureTime = camSettings.exposureTime
         end
-        if camGPIO != lastCamGPIO
-            #Update camGPIO
-
-            lastCamGPIO = camGPIO
+        if (camSettings.acquisitionFramerate != lastCamSettings.acquisitionFramerate)
+            framerate!(cam,camSettings.acquisitionFramerate)
+            camSettingsLimits.exposureTime = (0.0,1000/camSettings.acquisitionFramerate)
+            lastCamSettings.acquisitionFramerate = camSettings.acquisitionFramerate
         end
+
         if time()-t_before < timerInterval
-            wait(update_timer)
+            wait(updateTimer)
         else
             yield()
         end
     end
+    close(updateTimer)
+    updateTimer = nothing
 end
 
 function camSettingsLimitsUpdater!(camSettingsLimits::settingsLimits)

@@ -33,13 +33,15 @@ perfGrabFramerate = 0.0
 
 include("gui.jl")
 
-
 function start()
+    global gui_open
     # Start gui (operates asynchronously at at ~60 FPS)
     @async_errhandle gui(timerInterval=1/60)
 
+    # Start settings updater (operates asynchronously at at ~10 FPS)
     @async_errhandle camSettingsUpdater(timerInterval=1/10)
 
+    # Run camera control with priority
     runCamera()
 
     @info "SpinnakerGUI: Successful exit"

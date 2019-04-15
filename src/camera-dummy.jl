@@ -21,8 +21,9 @@ function start!(cam::String)
     dummycamTimer = Timer(0.0,interval=1/camSettings.acquisitionFramerate)
 end
 function stop!(cam::String)
-    global dummycamTimer
+    global dummycamTimer, camRunning
     close(dummycamTimer)
+    dummycamTimer = nothing
 end
 function framerate!(cam::String,framerate::Real)
     global dummycamTimer
@@ -39,21 +40,33 @@ end
 function runCamera()
     global dummycamTimer
     global perfGrabFramerate
-    global cam, camImage, camImageFrameBuffer
+    global cam, camImage, camImageFrameBuffer, camRunning
 
     # Initialize dummy camera
     cam = "dummycam"
     start!(cam)
+    camRunning = true
 
     camImage = Array{UInt8}(undef,camSettings.width,camSettings.height)
 
     perfGrabTime = time()
     while gui_open
-        #cim_id, cim_timestamp, cim_exposure = getimage!(camera, previewimage)
-        getimage!(cam,camImage,normalize=false)
-        # Loop timing
-        perfGrabFramerate = 1/(time() - perfGrabTime)
-        perfGrabTime = time()
+        if camRunning
+            #cim_id, cim_timestamp, cim_exposure = getimage!(camera, previewimage)
+            try
+                getimage!(cam,camImage,normalize=false)
+            catch err
+                if err isa EOFError
+                    # Do nothing. This happens if the camera is stopped before the camRunning
+                    # bool is set due to async
+                else
+                    rethrow()
+                end
+            end
+            # Loop timing
+            perfGrabFramerate = 1/(time() - perfGrabTime)
+            perfGrabTime = time()
+        end
         yield()
     end
     stop!(cam)
