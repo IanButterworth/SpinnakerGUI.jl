@@ -29,6 +29,14 @@ function framerate!(cam::String,framerate::Real)
     global dummycamTimer
     dummycamTimer = Timer(0.0,interval=1/camSettings.acquisitionFramerate)
 end
+function height!(cam::String,height::Int)
+    global camImage
+    camImage = Array{UInt8}(undef,size(camImage,1),height)
+end
+function width!(cam::String,width::Int)
+    global camImage
+    camImage = Array{UInt8}(undef,width,size(camImage,2))
+end
 
 # Helper functions
 function updateExposureFactor(exposure)

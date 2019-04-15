@@ -31,17 +31,17 @@ Base.@kwdef mutable struct settingsLimits
     acquisitionFramerate::Tuple{AbstractFloat,AbstractFloat} = (0.0,60.0)
     exposureMode::Vector{Symbol} = [:timed,:triggerWidth]
     exposureAuto::Vector{Symbol} = [:off,:once,:continuous]
-    exposureTime::Tuple{AbstractFloat,AbstractFloat} = (0.0,2000.0)
+    exposureTime::Tuple{AbstractFloat,AbstractFloat} = (0.0,100.0)
     gainAuto::Vector{Symbol} = [:off,:once,:continuous]
     gain::Tuple{AbstractFloat,AbstractFloat} = (0.0,10.0)
     gamma::Tuple{AbstractFloat,AbstractFloat} = (0.0,10.0)
     blackLevel::Tuple{AbstractFloat,AbstractFloat} = (0.0,4000.0)
     deviceLinkThroughputLimit::Tuple{Int64,Int64} = (0,383328000)
 
-    width::Tuple{Int64,Int64} = (0,10000)
-    height::Tuple{Int64,Int64} = (0,10000)
-    offsetX::Tuple{Int64,Int64} = (0,10000)
-    offsetY::Tuple{Int64,Int64} = (0,10000)
+    width::Tuple{Int64,Int64} = (0,3000)
+    height::Tuple{Int64,Int64} = (0,3000)
+    offsetX::Tuple{Int64,Int64} = (0,3000)
+    offsetY::Tuple{Int64,Int64} = (0,3000)
     binningHorizontal::Tuple{Int64,Int64} = (1,2)
     binningVertical::Tuple{Int64,Int64} = (1,2)
 end
@@ -84,6 +84,8 @@ function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
     lastCamGPIO = deepcopy(camGPIO)
     while gui_open
         t_before = time()
+
+        # EXPOSURE
         if (camSettings.exposureAuto != lastCamSettings.exposureAuto) || (camSettings.exposureTime != lastCamSettings.exposureTime)
             if camSettings.exposureAuto == :off
                 exposure!(cam,camSettings.exposureTime)
@@ -99,11 +101,25 @@ function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
             lastCamSettings.exposureAuto = camSettings.exposureAuto
             lastCamSettings.exposureTime = camSettings.exposureTime
         end
+
+        # FRAMERATE
         if (camSettings.acquisitionFramerate != lastCamSettings.acquisitionFramerate)
             framerate!(cam,camSettings.acquisitionFramerate)
             camSettingsLimits.exposureTime = (0.0,1000/camSettings.acquisitionFramerate)
             lastCamSettings.acquisitionFramerate = camSettings.acquisitionFramerate
         end
+
+        # IMAGE WIDTH
+        if (camSettings.width != lastCamSettings.width)
+            width!(cam,camSettings.width)
+            lastCamSettings.width = camSettings.width
+        end
+        # IMAGE HEIGHT
+        if (camSettings.height != lastCamSettings.height)
+            height!(cam,camSettings.height)
+            lastCamSettings.height = camSettings.height
+        end
+
 
         if time()-t_before < timerInterval
             wait(updateTimer)

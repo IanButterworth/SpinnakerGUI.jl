@@ -12,10 +12,6 @@ using Random, FixedPointNumbers
 
 include("gui/gui_control.jl")
 
-preview_img_width = 800
-previewscale = preview_img_width/camSettings.width
-preview_img_height = round(Int,camSettings.height * previewscale)
-
 function gui(;timerInterval::AbstractFloat=1/60)
     global gui_open, control_open, demo_open
     global camSettings, camGPIO
@@ -74,19 +70,22 @@ function gui(;timerInterval::AbstractFloat=1/60)
     # CImGui.AddFontFromFileTTF(fonts, joinpath(fonts_dir, "Roboto-Medium.ttf"), 16)
     # @assert default_font != C_NULL
 
-    # creat texture for image drawing
-    image_id = ImGui_ImplOpenGL3_CreateImageTexture(camSettings.width, camSettings.height)
+    image_id = nothing
+    preview_img_width = nothing
+    previewscale = nothing
+    preview_img_height = nothing
 
     # setup Platform/Renderer bindings
     ImGui_ImplGlfw_InitForOpenGL(window, true)
     ImGui_ImplOpenGL3_Init(glsl_version)
 
     clear_color = Cfloat[0.45, 0.55, 0.60, 1.00]
-
+    previousSize = nothing
     looptime = 0.0
     guiTimer = Timer(0,interval=timerInterval)
+    firstLoop = true
     while !GLFW.WindowShouldClose(window)
-        gui_open = true
+
         t_before = time()
         io = CImGui.GetIO()
 
@@ -95,14 +94,23 @@ function gui(;timerInterval::AbstractFloat=1/60)
         ImGui_ImplOpenGL3_NewFrame()
         ImGui_ImplGlfw_NewFrame()
         CImGui.NewFrame()
+        gui_open = true
 
         control_open && @c ShowControlWindow(&control_open)
 
         # show image example
         CImGui.Begin("Raw Video Preview")
         pos = CImGui.GetCursorScreenPos()
-
-        ImGui_ImplOpenGL3_UpdateImageTexture(image_id, camImage, camSettings.width, camSettings.height,format=GL_LUMINANCE,type=GL_UNSIGNED_BYTE)
+        camImageSize = size(camImage)
+        if camImageSize != previousSize || firstLoop
+            # creat texture for image drawing
+            image_id = ImGui_ImplOpenGL3_CreateImageTexture(camImageSize[1], camImageSize[2])
+            previousSize = camImageSize
+            preview_img_width = 800
+            previewscale = preview_img_width/camImageSize[1]
+            preview_img_height = round(Int,camImageSize[2] * previewscale)
+        end
+        ImGui_ImplOpenGL3_UpdateImageTexture(image_id, camImage, camImageSize[1], camImageSize[2],format=GL_LUMINANCE,type=GL_UNSIGNED_BYTE)
 
         CImGui.Image(Ptr{Cvoid}(image_id), (preview_img_width, preview_img_height))
         if CImGui.IsItemHovered()
@@ -137,7 +145,7 @@ function gui(;timerInterval::AbstractFloat=1/60)
 
         GLFW.MakeContextCurrent(window)
         GLFW.SwapBuffers(window)
-
+        firstLoop = false
         if time()-t_before < timerInterval
             wait(guiTimer)
         else

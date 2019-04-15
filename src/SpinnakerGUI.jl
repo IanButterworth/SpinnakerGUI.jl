@@ -38,8 +38,8 @@ function start()
     # Start gui (operates asynchronously at at ~60 FPS)
     @async_errhandle gui(timerInterval=1/60)
 
-    # Start settings updater (operates asynchronously at at ~10 FPS)
-    @async_errhandle camSettingsUpdater(timerInterval=1/10)
+    # Start settings updater (operates asynchronously at at ~2 FPS)
+    @async_errhandle camSettingsUpdater(timerInterval=1/2)
 
     # Run camera control with priority
     runCamera()

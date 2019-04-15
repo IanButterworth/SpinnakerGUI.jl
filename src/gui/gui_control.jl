@@ -183,7 +183,6 @@ function ShowControlWindow(p_open::Ref{Bool})
     end
 
 
-
     ## PLAY/PAUSE
     @cstatic ctrl_playing=true begin
         if ctrl_playing
