@@ -52,7 +52,9 @@ function ShowControlWindow(p_open::Ref{Bool})
     CImGui.Text(@sprintf("Display: %.2f ms/frame (%.1f FPS)", 1000 / CImGui.GetIO().Framerate, CImGui.GetIO().Framerate))
     CImGui.Text(@sprintf("Framegrab: %.2f ms/frame (%.1f FPS)", 1000 / perfGrabFramerate, perfGrabFramerate))
     CImGui.Text(@sprintf("Camera: %.1f FPS. Exposure %.1f ms", camSettings.acquisitionFramerate, camSettings.exposureTime))
-
+    CImGui.Spacing()
+    CImGui.Text("Settings")
+    ## FRAMERATE
     @cstatic ctrl_framerate=Cfloat(12.00) begin
         ctrl_framerate = Cfloat(camSettings.acquisitionFramerate)
         CImGui.PushItemWidth(200)
@@ -61,9 +63,11 @@ function ShowControlWindow(p_open::Ref{Bool})
             camSettingsLimits.acquisitionFramerate[2], "%.3f")
         camSettings.acquisitionFramerate = ctrl_framerate
     end
-    @cstatic ctrl_exposure=Cfloat(12.00) ctrl_auto=false begin
+
+    ## EXPOSURE
+    @cstatic ctrl_mode=0 ctrl_exposure=Cfloat(12.00) ctrl_auto=false begin
         ctrl_exposure = Cfloat(camSettings.exposureTime)
-        ctrl_auto = camSettings.exposureAuto == :continuous
+        ctrl_auto = (camSettings.exposureAuto == :continuous)
         CImGui.PushItemWidth(200)
         @c CImGui.SliderFloat("Exposure (ms)", &ctrl_exposure,
             camSettingsLimits.exposureTime[1],
@@ -72,6 +76,20 @@ function ShowControlWindow(p_open::Ref{Bool})
         @c CImGui.Checkbox("Auto", &ctrl_auto)
         CImGui.SameLine()
         once = CImGui.Button("Auto once")
+
+        items = map(x->string(x),camSettingsLimits.exposureMode)
+        CImGui.PushItemWidth(50); CImGui.SameLine()
+        @cstatic item_current="timed" begin
+            # here our selection is a single pointer stored outside the object.
+            if CImGui.BeginCombo("Mode", item_current) # the second parameter is the label previewed before opening the combo.
+                for n = 0:length(items)-1
+                    is_selected = item_current == items[n+1]
+                    CImGui.Selectable(items[n+1], is_selected) && (item_current = items[n+1];)
+                    is_selected && CImGui.SetItemDefaultFocus() # set the initial focus when opening the combo (scrolling + for keyboard navigation support in the upcoming navigation branch)
+                end
+                CImGui.EndCombo()
+            end
+        end
         if once || (camSettings.exposureAuto == :once) # Keep `once` if pending
             camSettings.exposureAuto = :once
         elseif ctrl_auto
@@ -81,6 +99,92 @@ function ShowControlWindow(p_open::Ref{Bool})
             camSettings.exposureTime = ctrl_exposure
         end
     end
+
+    ## GAIN
+    @cstatic ctrl_gain=Cfloat(12.00) ctrl_auto=false begin
+        ctrl_gain = Cfloat(camSettings.gain)
+        ctrl_auto = (camSettings.gainAuto == :continuous)
+        CImGui.PushItemWidth(200)
+        @c CImGui.SliderFloat("Gain", &ctrl_gain,
+            camSettingsLimits.gain[1],
+            camSettingsLimits.gain[2], "%.3f")
+        CImGui.SameLine()
+        @c CImGui.Checkbox("Auto", &ctrl_auto)
+        CImGui.SameLine()
+        once = CImGui.Button("Auto once")
+
+        if once || (camSettings.gainAuto == :once) # Keep `once` if pending
+            camSettings.gainAuto = :once
+        elseif ctrl_auto
+            camSettings.gainAuto = :continuous
+        elseif !ctrl_auto
+            camSettings.gainAuto = :off
+            camSettings.gain = ctrl_gain
+        end
+    end
+
+    ## GAMMA
+    @cstatic ctrl_gamma=Cfloat(12.00) begin
+        ctrl_gamma = Cfloat(camSettings.gamma)
+        CImGui.PushItemWidth(200)
+        @c CImGui.SliderFloat("Gamma", &ctrl_gamma,
+            camSettingsLimits.gamma[1],
+            camSettingsLimits.gamma[2], "%.3f")
+        camSettings.gamma = ctrl_gamma
+    end
+
+    ## BLACK LEVEL
+    @cstatic ctrl_blacklevel=Cfloat(12.00) begin
+        ctrl_blacklevel = Cfloat(camSettings.blackLevel)
+        CImGui.PushItemWidth(200)
+        @c CImGui.SliderFloat("Black Level", &ctrl_blacklevel,
+            camSettingsLimits.blackLevel[1],
+            camSettingsLimits.blackLevel[2], "%.3f")
+        camSettings.blackLevel = ctrl_blacklevel
+    end
+
+    CImGui.Spacing()
+    CImGui.Text("Image Format")
+    ## IMAGE WIDTH
+    @cstatic ctrl_val=Cint(100) begin
+        ctrl_val = Cint(camSettings.width)
+        CImGui.PushItemWidth(200)
+        @c CImGui.SliderInt("Width", &ctrl_val,
+            camSettingsLimits.width[1],
+            camSettingsLimits.width[2], "%i")
+        camSettings.width = ctrl_val
+    end
+    ## IMAGE HEIGHT
+    @cstatic ctrl_val=Cint(100) begin
+        ctrl_val = Cint(camSettings.height)
+        CImGui.PushItemWidth(200)
+        @c CImGui.SliderInt("Height", &ctrl_val,
+            camSettingsLimits.height[1],
+            camSettingsLimits.height[2], "%i")
+        camSettings.height = ctrl_val
+    end
+    ## IMAGE OFFSET X
+    @cstatic ctrl_val=Cint(0) begin
+        ctrl_val = Cint(camSettings.offsetX)
+        CImGui.PushItemWidth(200)
+        @c CImGui.SliderInt("Offset X", &ctrl_val,
+            camSettingsLimits.offsetX[1],
+            camSettingsLimits.offsetX[2], "%i")
+        camSettings.offsetX = ctrl_val
+    end
+    ## IMAGE OFFSET Y
+    @cstatic ctrl_val=Cint(0) begin
+        ctrl_val = Cint(camSettings.offsetY)
+        CImGui.PushItemWidth(200)
+        @c CImGui.SliderInt("Offset Y", &ctrl_val,
+            camSettingsLimits.offsetY[1],
+            camSettingsLimits.offsetY[2], "%i")
+        camSettings.offsetY = ctrl_val
+    end
+
+
+
+    ## PLAY/PAUSE
     @cstatic ctrl_playing=true begin
         if ctrl_playing
             if CImGui.Button("Pause",(100,100))

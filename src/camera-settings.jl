@@ -38,12 +38,12 @@ Base.@kwdef mutable struct settingsLimits
     blackLevel::Tuple{AbstractFloat,AbstractFloat} = (0.0,4000.0)
     deviceLinkThroughputLimit::Tuple{Int64,Int64} = (0,383328000)
 
-    width::Tuple{Int64,Int64} = (0,typemax(1))
-    height::Tuple{Int64,Int64} = (0,typemax(1))
-    offsetX::Tuple{Int64,Int64} = (0,typemax(1))
-    offsetY::Tuple{Int64,Int64} = (0,typemax(1))
-    binningHorizontal::Tuple{Int64,Int64} = (1,typemax(1))
-    binningVertical::Tuple{Int64,Int64} = (1,typemax(1))
+    width::Tuple{Int64,Int64} = (0,10000)
+    height::Tuple{Int64,Int64} = (0,10000)
+    offsetX::Tuple{Int64,Int64} = (0,10000)
+    offsetY::Tuple{Int64,Int64} = (0,10000)
+    binningHorizontal::Tuple{Int64,Int64} = (1,2)
+    binningVertical::Tuple{Int64,Int64} = (1,2)
 end
 
 Base.@kwdef mutable struct GPIO
