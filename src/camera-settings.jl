@@ -145,8 +145,6 @@ function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
                 lastCamSettings.offsetX = camSettings.offsetX
                 lastCamSettings.offsetY = camSettings.offsetY
             end
-        else
-            println("cam not running")
         end
         if time()-t_before < timerInterval
             wait(updateTimer)

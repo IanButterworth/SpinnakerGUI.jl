@@ -159,8 +159,6 @@ function gui(;timerInterval::AbstractFloat=1/60)
             GLFW.SwapBuffers(window)
 
             firstLoop = false
-        else
-            println("cam image is nothing")
         end
         if time()-t_before < timerInterval
             wait(guiTimer)
