@@ -33,10 +33,10 @@ perfGrabFramerate = 0.0
 
 include("gui.jl")
 
-function start()
+function start(;camid::Int64=0)
     global cam
 
-    cam = cam_init()
+    cam = cam_init(camid=camid)
 
     global gui_open
     gui_open = true # Async means you have to assume it's open - could be improved

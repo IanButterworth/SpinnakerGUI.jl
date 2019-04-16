@@ -6,8 +6,6 @@ function cam_init(;camid::Int64=0)
     camlist = Spinnaker.CameraList()
     if length(camlist) == 0
         error("No camera found")
-    elseif length(camlist) > 1
-        error("Multiple cameras found. Choice ambiguous.")
     else
         cam = camlist[camid]
     end
