@@ -98,13 +98,15 @@ function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
                 if camSettings.exposureAuto == :off
                     exposure!(cam,camSettings.exposureTime*1000)
                 elseif camSettings.exposureAuto == :once
-                    ex,mode = exposure!(cam)
-                    camSettings.exposureTime = ex./1000
+                    exposure!(cam)
+                    ex,mode = exposure(cam)
+                    camSettings.exposureTime = ex/1000
                     exposure!(cam,ex) # Required to set cam back to fixed exposure
                     camSettings.exposureAuto = :off
                 elseif camSettings.exposureAuto == :continuous
-                    ex,mode = exposure!(cam)
-                    camSettings.exposureTime = ex./1000
+                    exposure!(cam)
+                    ex,mode = exposure(cam)
+                    camSettings.exposureTime = ex/1000
                 end
                 lastCamSettings.exposureAuto = camSettings.exposureAuto
                 lastCamSettings.exposureTime = camSettings.exposureTime
@@ -115,12 +117,14 @@ function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
                 if camSettings.gainAuto == :off
                     gain!(cam,camSettings.gain)
                 elseif camSettings.gainAuto == :once
-                    g,mode = gain!(cam)
+                    gain!(cam)
+                    g,mode = gain(cam)
                     camSettings.gain = g
                     gain!(cam,g) # Required to set cam back to fixed gain
                     camSettings.gainAuto = :off
                 elseif camSettings.gainAuto == :continuous
-                    g,mode = gain!(cam)
+                    gain!(cam)
+                    g,mode = gain(cam)
                     camSettings.gain = g
                 end
                 lastCamSettings.gainAuto = camSettings.gainAuto
