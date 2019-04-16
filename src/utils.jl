@@ -19,7 +19,7 @@ macro async_errhandle(ex)
             $(esc(ex))
         catch err
             bt = catch_backtrace()
-            @warn "@async error from $($ex_string)"
+            @warn "@async error from @async $($ex_string)"
             showerror(stderr, err, bt)
         end
     end

@@ -76,7 +76,7 @@ Base.@kwdef mutable struct GPIOLimits
 end
 
 function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
-    global camSettings, camSettingsLimits
+    global camSettings, camSettingsLimits, camRunning
     global camGPIO, camGPIOLimits
 
     updateTimer = Timer(0,interval=timerInterval)
@@ -84,67 +84,74 @@ function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
     lastCamGPIO = deepcopy(camGPIO)
     while gui_open
         t_before = time()
-
-        # FRAMERATE
-        if (camSettings.acquisitionFramerate != lastCamSettings.acquisitionFramerate)
-            framerate!(cam,camSettings.acquisitionFramerate)
-            camSettingsLimits.exposureTime = (0.0,1000/camSettings.acquisitionFramerate)
-            lastCamSettings.acquisitionFramerate = camSettings.acquisitionFramerate
-        end
-
-        # EXPOSURE
-        if (camSettings.exposureAuto != lastCamSettings.exposureAuto) || (camSettings.exposureTime != lastCamSettings.exposureTime)
-            if camSettings.exposureAuto == :off
-                exposure!(cam,camSettings.exposureTime)
-            elseif camSettings.exposureAuto == :once
-                ex = exposure!(cam)
-                camSettings.exposureTime = ex
-                exposure!(cam,ex) # Required to set cam back to fixed exposure
-                camSettings.exposureAuto = :off
-            elseif camSettings.exposureAuto == :continuous
-                ex = exposure!(cam)
-                camSettings.exposureTime = ex
+        if camRunning
+            # FRAMERATE
+            if (camSettings.acquisitionFramerate != lastCamSettings.acquisitionFramerate)
+                framerate!(cam,camSettings.acquisitionFramerate)
+                camSettingsLimits.exposureTime = (0.0,1000/camSettings.acquisitionFramerate)
+                lastCamSettings.acquisitionFramerate = camSettings.acquisitionFramerate
             end
-            lastCamSettings.exposureAuto = camSettings.exposureAuto
-            lastCamSettings.exposureTime = camSettings.exposureTime
-        end
 
-        # GAIN
-        if (camSettings.gainAuto != lastCamSettings.gainAuto) || (camSettings.gain != lastCamSettings.gain)
-            if camSettings.gainAuto == :off
-                gain!(cam,camSettings.gain)
-            elseif camSettings.gainAuto == :once
-                g = gain!(cam)
-                camSettings.gain = g
-                gain!(cam,g) # Required to set cam back to fixed gain
-                camSettings.gainAuto = :off
-            elseif camSettings.gainAuto == :continuous
-                g = gain!(cam)
-                camSettings.gain = g
+            # EXPOSURE
+            if (camSettings.exposureAuto != lastCamSettings.exposureAuto) || (camSettings.exposureTime != lastCamSettings.exposureTime)
+                if camSettings.exposureAuto == :off
+                    exposure!(cam,camSettings.exposureTime)
+                elseif camSettings.exposureAuto == :once
+                    ex = exposure!(cam)
+                    camSettings.exposureTime = parse(Float64,ex)
+                    exposure!(cam,ex) # Required to set cam back to fixed exposure
+                    camSettings.exposureAuto = :off
+                elseif camSettings.exposureAuto == :continuous
+                    ex = exposure!(cam)
+                    camSettings.exposureTime = parse(Float64,ex)
+                end
+                lastCamSettings.exposureAuto = camSettings.exposureAuto
+                lastCamSettings.exposureTime = camSettings.exposureTime
             end
-            lastCamSettings.gainAuto = camSettings.gainAuto
-            lastCamSettings.gain = camSettings.gain
-        end
 
-        # IMAGE SIZE
-        if (camSettings.width != lastCamSettings.width) || (camSettings.height != lastCamSettings.height)
-            imagedims!(cam,(camSettings.width,camSettings.height))
-            lastCamSettings.width = camSettings.width
-            lastCamSettings.height = camSettings.height
-        end
+            # GAIN
+            if (camSettings.gainAuto != lastCamSettings.gainAuto) || (camSettings.gain != lastCamSettings.gain)
+                if camSettings.gainAuto == :off
+                    gain!(cam,camSettings.gain)
+                elseif camSettings.gainAuto == :once
+                    g = gain!(cam)
+                    camSettings.gain = parse(Float64,g)
+                    gain!(cam,g) # Required to set cam back to fixed gain
+                    camSettings.gainAuto = :off
+                elseif camSettings.gainAuto == :continuous
+                    g = gain!(cam)
+                    camSettings.gain = parse(Float64,g)
+                end
+                lastCamSettings.gainAuto = camSettings.gainAuto
+                lastCamSettings.gain = camSettings.gain
+            end
 
-        # IMAGE OFFSET
-        if (camSettings.offsetX != lastCamSettings.offsetX) || (camSettings.offsetY != lastCamSettings.offsetY)
-            offsetdims!(cam,(camSettings.offsetX,camSettings.offsetY))
-            lastCamSettings.offsetX = camSettings.offsetX
-            lastCamSettings.offsetY = camSettings.offsetY
-        end
+            # IMAGE SIZE
+            if (camSettings.width != lastCamSettings.width) || (camSettings.height != lastCamSettings.height)
+                stop!(cam)
+                camrunning = false
+                imagedims!(cam,(camSettings.width,camSettings.height))
+                start!(cam)
+                camrunning = true
+                lastCamSettings.width = camSettings.width
+                lastCamSettings.height = camSettings.height
+            end
 
+            # IMAGE OFFSET
+            if (camSettings.offsetX != lastCamSettings.offsetX) || (camSettings.offsetY != lastCamSettings.offsetY)
+                offsetdims!(cam,(camSettings.offsetX,camSettings.offsetY))
+                lastCamSettings.offsetX = camSettings.offsetX
+                lastCamSettings.offsetY = camSettings.offsetY
+            end
+        else
+            println("cam not running")
+        end
         if time()-t_before < timerInterval
             wait(updateTimer)
         else
             yield()
         end
+
     end
     close(updateTimer)
     updateTimer = nothing
@@ -152,15 +159,13 @@ end
 
 function camSettingsLimitsUpdater!(cam,camSettingsLimits::settingsLimits)
     # General Settings
-    camSettingsLimits.acquisitionFramerate = (0.0,60.0)  # NEEDS SPINNAKER FUNCTION
-    camSettingsLimits.exposureTime = (0.0,1000/camSettings.acquisitionFramerate)  # NEEDS SPINNAKER FUNCTION
+    camSettingsLimits.acquisitionFramerate = framerate_limits(cam)
+    camSettingsLimits.exposureTime = exposure_limits(cam)
+    camSettingsLimits.gain = gain_limits(cam)
 
     # Image size
-    width,height = sensordims(cam)
-    camSettingsLimits.width = (20,width)
-    camSettingsLimits.height = (20,height)
-    camSettingsLimits.offsetX = (0,width)
-    camSettingsLimits.offsetY = (0,height)
+    camSettingsLimits.width,camSettingsLimits.height = imagedims_limits(cam)
+    camSettingsLimits.offsetX,camSettingsLimits.offsetY = offsetdims_limits(cam)
 end
 
 function camGPIOLimitsUpdater!(camGPIOLimits::GPIOLimits)

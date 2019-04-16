@@ -5,6 +5,7 @@ include("utils.jl")
 # camera settings
 include("camera-settings.jl")
 cam = nothing
+camRunning = false
 camSettings = settings()
 camSettingsLimits = settingsLimits()
 camGPIO = GPIO()
@@ -33,6 +34,10 @@ perfGrabFramerate = 0.0
 include("gui.jl")
 
 function start()
+    global cam
+
+    cam = cam_init()
+
     global gui_open
     gui_open = true # Async means you have to assume it's open - could be improved
     # Start gui (operates asynchronously at at ~60 FPS)
