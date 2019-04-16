@@ -85,6 +85,13 @@ function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
     while gui_open
         t_before = time()
 
+        # FRAMERATE
+        if (camSettings.acquisitionFramerate != lastCamSettings.acquisitionFramerate)
+            framerate!(cam,camSettings.acquisitionFramerate)
+            camSettingsLimits.exposureTime = (0.0,1000/camSettings.acquisitionFramerate)
+            lastCamSettings.acquisitionFramerate = camSettings.acquisitionFramerate
+        end
+
         # EXPOSURE
         if (camSettings.exposureAuto != lastCamSettings.exposureAuto) || (camSettings.exposureTime != lastCamSettings.exposureTime)
             if camSettings.exposureAuto == :off
@@ -102,24 +109,36 @@ function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
             lastCamSettings.exposureTime = camSettings.exposureTime
         end
 
-        # FRAMERATE
-        if (camSettings.acquisitionFramerate != lastCamSettings.acquisitionFramerate)
-            framerate!(cam,camSettings.acquisitionFramerate)
-            camSettingsLimits.exposureTime = (0.0,1000/camSettings.acquisitionFramerate)
-            lastCamSettings.acquisitionFramerate = camSettings.acquisitionFramerate
+        # GAIN
+        if (camSettings.gainAuto != lastCamSettings.gainAuto) || (camSettings.gain != lastCamSettings.gain)
+            if camSettings.gainAuto == :off
+                gain!(cam,camSettings.gain)
+            elseif camSettings.gainAuto == :once
+                g = gain!(cam)
+                camSettings.gain = g
+                gain!(cam,g) # Required to set cam back to fixed gain
+                camSettings.gainAuto = :off
+            elseif camSettings.gainAuto == :continuous
+                g = gain!(cam)
+                camSettings.gain = g
+            end
+            lastCamSettings.gainAuto = camSettings.gainAuto
+            lastCamSettings.gain = camSettings.gain
         end
 
-        # IMAGE WIDTH
-        if (camSettings.width != lastCamSettings.width)
-            width!(cam,camSettings.width)
+        # IMAGE SIZE
+        if (camSettings.width != lastCamSettings.width) || (camSettings.height != lastCamSettings.height)
+            imagedims!(cam,(camSettings.width,camSettings.height))
             lastCamSettings.width = camSettings.width
-        end
-        # IMAGE HEIGHT
-        if (camSettings.height != lastCamSettings.height)
-            height!(cam,camSettings.height)
             lastCamSettings.height = camSettings.height
         end
 
+        # IMAGE OFFSET
+        if (camSettings.offsetX != lastCamSettings.offsetX) || (camSettings.offsetY != lastCamSettings.offsetY)
+            offsetdims!(cam,(camSettings.offsetX,camSettings.offsetY))
+            lastCamSettings.offsetX = camSettings.offsetX
+            lastCamSettings.offsetY = camSettings.offsetY
+        end
 
         if time()-t_before < timerInterval
             wait(updateTimer)
@@ -131,8 +150,17 @@ function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
     updateTimer = nothing
 end
 
-function camSettingsLimitsUpdater!(camSettingsLimits::settingsLimits)
+function camSettingsLimitsUpdater!(cam,camSettingsLimits::settingsLimits)
+    # General Settings
+    camSettingsLimits.acquisitionFramerate = (0.0,60.0)  # NEEDS SPINNAKER FUNCTION
+    camSettingsLimits.exposureTime = (0.0,1000/camSettings.acquisitionFramerate)  # NEEDS SPINNAKER FUNCTION
 
+    # Image size
+    width,height = sensordims(cam)
+    camSettingsLimits.width = (20,width)
+    camSettingsLimits.height = (20,height)
+    camSettingsLimits.offsetX = (0,width)
+    camSettingsLimits.offsetY = (0,height)
 end
 
 function camGPIOLimitsUpdater!(camGPIOLimits::GPIOLimits)

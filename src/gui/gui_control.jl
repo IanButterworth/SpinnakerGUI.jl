@@ -73,13 +73,13 @@ function ShowControlWindow(p_open::Ref{Bool})
             camSettingsLimits.exposureTime[1],
             camSettingsLimits.exposureTime[2], "%.3f")
         CImGui.SameLine()
-        @c CImGui.Checkbox("Auto", &ctrl_auto)
+        @c CImGui.Checkbox("Auto exp.", &ctrl_auto)
         CImGui.SameLine()
-        once = CImGui.Button("Auto once")
+        once = CImGui.Button("Auto exp. once")
 
         items = map(x->string(x),camSettingsLimits.exposureMode)
         CImGui.PushItemWidth(50); CImGui.SameLine()
-        @cstatic item_current="timed" begin
+        @cstatic item_current="timed" begin #NOT LINKED!!
             # here our selection is a single pointer stored outside the object.
             if CImGui.BeginCombo("Mode", item_current) # the second parameter is the label previewed before opening the combo.
                 for n = 0:length(items)-1
@@ -101,28 +101,29 @@ function ShowControlWindow(p_open::Ref{Bool})
     end
 
     ## GAIN
-    @cstatic ctrl_gain=Cfloat(12.00) ctrl_auto=false begin
+    @cstatic ctrl_gain=Cfloat(0.00) ctrl_autogain=false begin
         ctrl_gain = Cfloat(camSettings.gain)
-        ctrl_auto = (camSettings.gainAuto == :continuous)
+        ctrl_autogain = (camSettings.gainAuto == :continuous)
         CImGui.PushItemWidth(200)
         @c CImGui.SliderFloat("Gain", &ctrl_gain,
             camSettingsLimits.gain[1],
             camSettingsLimits.gain[2], "%.3f")
         CImGui.SameLine()
-        @c CImGui.Checkbox("Auto", &ctrl_auto)
+        @c CImGui.Checkbox("Auto Gain", &ctrl_autogain)
         CImGui.SameLine()
-        once = CImGui.Button("Auto once")
+        gainAutoOnce = CImGui.Button("Auto gain once")
 
-        if once || (camSettings.gainAuto == :once) # Keep `once` if pending
+        if gainAutoOnce || (camSettings.gainAuto == :once) # Keep `once` if pending
             camSettings.gainAuto = :once
-        elseif ctrl_auto
+        elseif ctrl_autogain
             camSettings.gainAuto = :continuous
-        elseif !ctrl_auto
+        elseif !ctrl_autogain
             camSettings.gainAuto = :off
             camSettings.gain = ctrl_gain
         end
     end
 
+    #==
     ## GAMMA
     @cstatic ctrl_gamma=Cfloat(12.00) begin
         ctrl_gamma = Cfloat(camSettings.gamma)
@@ -142,6 +143,8 @@ function ShowControlWindow(p_open::Ref{Bool})
             camSettingsLimits.blackLevel[2], "%.3f")
         camSettings.blackLevel = ctrl_blacklevel
     end
+    =#
+
 
     CImGui.Spacing()
     CImGui.Text("Image Format")

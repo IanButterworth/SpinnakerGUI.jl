@@ -13,7 +13,7 @@ using Random, FixedPointNumbers
 include("gui/gui_control.jl")
 
 function gui(;timerInterval::AbstractFloat=1/60)
-    global gui_open, control_open, demo_open
+    global gui_open, control_open
     global camSettings, camGPIO
 
     @static if Sys.isapple()
@@ -71,9 +71,9 @@ function gui(;timerInterval::AbstractFloat=1/60)
     # @assert default_font != C_NULL
 
     image_id = nothing
-    preview_img_width = nothing
-    previewscale = nothing
-    preview_img_height = nothing
+    previewImageWidth = nothing
+    previewImageHeight = nothing
+
 
     # setup Platform/Renderer bindings
     ImGui_ImplGlfw_InitForOpenGL(window, true)
@@ -100,34 +100,45 @@ function gui(;timerInterval::AbstractFloat=1/60)
 
         # show image example
         CImGui.Begin("Raw Video Preview")
+        previewWindowWidth = CImGui.GetWindowWidth()
+        previewWindowHeight = CImGui.GetWindowHeight() - 40 # subtracting top bar
+        previewWindowAspect = previewWindowWidth / previewWindowHeight
+
         pos = CImGui.GetCursorScreenPos()
-        camImageSize = size(camImage)
-        if camImageSize != previousSize || firstLoop
-            # creat texture for image drawing
+
+        local_camImage = deepcopy(camImage) #Create copy to prevent async error if size is read at different time to image
+        camImageSize = size(local_camImage)
+        camImageAspect = camImageSize[1]/camImageSize[2]
+
+        if camImageSize != previousSize || firstLoop # creat texture for image drawing
+            wait(Timer(0.5))    # Force a long wait as changing the image size was causing a segfault if GUI updated too quickly (likely async related)
             image_id = ImGui_ImplOpenGL3_CreateImageTexture(camImageSize[1], camImageSize[2])
             previousSize = camImageSize
-            preview_img_width = 800
-            previewscale = preview_img_width/camImageSize[1]
-            preview_img_height = round(Int,camImageSize[2] * previewscale)
         end
-        ImGui_ImplOpenGL3_UpdateImageTexture(image_id, camImage, camImageSize[1], camImageSize[2],format=GL_LUMINANCE,type=GL_UNSIGNED_BYTE)
-
-        CImGui.Image(Ptr{Cvoid}(image_id), (preview_img_width, preview_img_height))
+        ImGui_ImplOpenGL3_UpdateImageTexture(image_id, local_camImage, camImageSize[1], camImageSize[2],format=GL_LUMINANCE,type=GL_UNSIGNED_BYTE)
+        if previewWindowAspect > camImageAspect
+            previewImageHeight = previewWindowHeight
+            previewImageWidth = previewImageHeight * camImageAspect
+        else
+            previewImageWidth = previewWindowWidth
+            previewImageHeight = previewImageWidth / camImageAspect
+        end
+        CImGui.Image(Ptr{Cvoid}(image_id), (Cfloat(previewImageWidth), Cfloat(previewImageHeight)))
         if CImGui.IsItemHovered()
             CImGui.BeginTooltip()
             region_sz = 32.0
 
             region_x = io.MousePos.x - pos.x - region_sz * 0.5
-            region_x = clamp(region_x,0.0,preview_img_width - region_sz)
+            region_x = clamp(region_x,0.0,previewImageWidth - region_sz)
 
             region_y = io.MousePos.y - pos.y - region_sz * 0.5
-            region_y = clamp(region_y,0.0,preview_img_height - region_sz)
+            region_y = clamp(region_y,0.0,previewImageHeight - region_sz)
 
             zoom = 4.0
             #CImGui.Text(@sprintf("Min: (%d, %d)", region_x, region_y))
             #CImGui.Text(@sprintf("Max: (%d, %d)", region_x + region_sz, region_y + region_sz))
-            uv0 = ImVec2(region_x / preview_img_width, region_y / preview_img_height)
-            uv1 = ImVec2((region_x + region_sz) / preview_img_width, (region_y + region_sz) / preview_img_height)
+            uv0 = ImVec2(region_x / previewImageWidth, region_y / previewImageHeight)
+            uv1 = ImVec2((region_x + region_sz) / previewImageWidth, (region_y + region_sz) / previewImageHeight)
             CImGui.Image(Ptr{Cvoid}(image_id), ImVec2(region_sz * zoom, region_sz * zoom), uv0, uv1, (255,255,255,255), (255,255,255,128))
             CImGui.EndTooltip()
         end
@@ -145,6 +156,7 @@ function gui(;timerInterval::AbstractFloat=1/60)
 
         GLFW.MakeContextCurrent(window)
         GLFW.SwapBuffers(window)
+
         firstLoop = false
         if time()-t_before < timerInterval
             wait(guiTimer)
