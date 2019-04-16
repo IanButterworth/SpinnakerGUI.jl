@@ -148,24 +148,9 @@ function ShowControlWindow(p_open::Ref{Bool})
 
     CImGui.Spacing()
     CImGui.Text("Image Format")
-    ## IMAGE WIDTH
-    @cstatic ctrl_val=Cint(100) begin
-        ctrl_val = Cint(camSettings.width)
-        CImGui.PushItemWidth(200)
-        @c CImGui.SliderInt("Width", &ctrl_val,
-            camSettingsLimits.width[1],
-            camSettingsLimits.width[2], "%i")
-        camSettings.width = ctrl_val
-    end
-    ## IMAGE HEIGHT
-    @cstatic ctrl_val=Cint(100) begin
-        ctrl_val = Cint(camSettings.height)
-        CImGui.PushItemWidth(200)
-        @c CImGui.SliderInt("Height", &ctrl_val,
-            camSettingsLimits.height[1],
-            camSettingsLimits.height[2], "%i")
-        camSettings.height = ctrl_val
-    end
+
+
+
     ## IMAGE OFFSET X
     @cstatic ctrl_val=Cint(0) begin
         ctrl_val = Cint(camSettings.offsetX)
@@ -174,6 +159,18 @@ function ShowControlWindow(p_open::Ref{Bool})
             camSettingsLimits.offsetX[1],
             camSettingsLimits.offsetX[2], "%i")
         camSettings.offsetX = ctrl_val
+    end
+    if !camRunning
+        CImGui.SameLine()
+        ## IMAGE WIDTH
+        @cstatic ctrl_val=Cint(100) begin
+            ctrl_val = Cint(camSettings.width)
+            CImGui.PushItemWidth(200)
+            @c CImGui.SliderInt("Width", &ctrl_val,
+                camSettingsLimits.width[1],
+                camSettingsLimits.width[2], "%i")
+            camSettings.width = ctrl_val
+        end
     end
     ## IMAGE OFFSET Y
     @cstatic ctrl_val=Cint(0) begin
@@ -184,20 +181,30 @@ function ShowControlWindow(p_open::Ref{Bool})
             camSettingsLimits.offsetY[2], "%i")
         camSettings.offsetY = ctrl_val
     end
+    if !camRunning
+        CImGui.SameLine()
+        ## IMAGE HEIGHT
+        @cstatic ctrl_val=Cint(100) begin
+            ctrl_val = Cint(camSettings.height)
+            CImGui.PushItemWidth(200)
+            @c CImGui.SliderInt("Height", &ctrl_val,
+                camSettingsLimits.height[1],
+                camSettingsLimits.height[2], "%i")
+            camSettings.height = ctrl_val
+        end
+    end
 
 
     ## PLAY/PAUSE
-    @cstatic ctrl_playing=true begin
-        if ctrl_playing
+    @cstatic begin
+        if camRunning
             if CImGui.Button("Pause",(100,100))
                 stop!(cam)
-                ctrl_playing = false
                 camRunning = false
             end
         else
             if CImGui.Button("Run",(100,100))
                 start!(cam)
-                ctrl_playing = true
                 camRunning = true
             end
         end

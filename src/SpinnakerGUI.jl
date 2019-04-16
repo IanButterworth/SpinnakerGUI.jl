@@ -24,7 +24,7 @@ camImage = nothing
 camImageFrameBuffer = nothing
 
 # GUI settings
-gui_open = true
+gui_open = nothing
 control_open = true
 
 # performance reporting
@@ -34,11 +34,10 @@ perfGrabFramerate = 0.0
 include("gui.jl")
 
 function start(;camid::Int64=0)
-    global cam
+    global cam, gui_open
 
     cam = cam_init(camid=camid)
 
-    global gui_open
     gui_open = true # Async means you have to assume it's open - could be improved
     # Start gui (operates asynchronously at at ~60 FPS)
     @async_errhandle gui(timerInterval=1/60)

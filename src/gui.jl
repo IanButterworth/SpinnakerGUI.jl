@@ -101,7 +101,7 @@ function gui(;timerInterval::AbstractFloat=1/60)
 
             # show image example
             CImGui.Begin("Raw Video Preview")
-            previewWindowWidth = CImGui.GetWindowWidth()
+            previewWindowWidth = CImGui.GetWindowWidth() - 30
             previewWindowHeight = CImGui.GetWindowHeight() - 40 # subtracting top bar
             previewWindowAspect = previewWindowWidth / previewWindowHeight
 

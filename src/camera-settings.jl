@@ -75,6 +75,15 @@ Base.@kwdef mutable struct GPIOLimits
     userOutputSelector::Vector{Symbol} = [:UserOutputValue1,:UserOutputValue2,:UserOutputValue3]
 end
 
+function camSettingsRead!(cam,camSettings)
+    camSettings.acquisitionFramerate = framerate(cam)
+    ex,mode = exposure(cam)
+    camSettings.exposureTime = ex/1000
+    camSettings.gain,mode = gain(cam)
+    camSettings.width,camSettings.height = imagedims(cam)
+    camSettings.offsetX,camSettings.offsetY = offsetdims(cam)
+end
+
 function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
     global camSettings, camSettingsLimits, camRunning
     global camGPIO, camGPIOLimits
@@ -133,11 +142,7 @@ function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
 
             # IMAGE SIZE
             if (camSettings.width != lastCamSettings.width) || (camSettings.height != lastCamSettings.height)
-                stop!(cam)
-                camrunning = false
                 imagedims!(cam,(camSettings.width,camSettings.height))
-                start!(cam)
-                camrunning = true
                 lastCamSettings.width = camSettings.width
                 lastCamSettings.height = camSettings.height
                 camSettingsLimitsUpdater!(cam,camSettingsLimits)

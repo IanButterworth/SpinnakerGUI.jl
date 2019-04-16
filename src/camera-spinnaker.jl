@@ -3,11 +3,13 @@
 using Spinnaker
 
 function cam_init(;camid::Int64=0)
+    global camSettings
     camlist = Spinnaker.CameraList()
     if length(camlist) == 0
         error("No camera found")
     else
         cam = camlist[camid]
+        camSettingsRead!(cam,camSettings)
     end
     return cam
 end
@@ -44,8 +46,6 @@ function runCamera()
             # Loop timing
             perfGrabFramerate = 1/(time() - perfGrabTime)
             perfGrabTime = time()
-        else
-            println("cam not running (grab)")
         end
         yield()
     end
