@@ -90,6 +90,7 @@ function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
                 framerate!(cam,camSettings.acquisitionFramerate)
                 camSettingsLimits.exposureTime = (0.0,1000/camSettings.acquisitionFramerate)
                 lastCamSettings.acquisitionFramerate = camSettings.acquisitionFramerate
+                camSettingsLimitsUpdater!(cam,camSettingsLimits)
             end
 
             # EXPOSURE
@@ -97,13 +98,13 @@ function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
                 if camSettings.exposureAuto == :off
                     exposure!(cam,camSettings.exposureTime)
                 elseif camSettings.exposureAuto == :once
-                    ex = exposure!(cam)
-                    camSettings.exposureTime = parse(Float64,ex)
+                    ex,mode = exposure!(cam)
+                    camSettings.exposureTime = ex
                     exposure!(cam,ex) # Required to set cam back to fixed exposure
                     camSettings.exposureAuto = :off
                 elseif camSettings.exposureAuto == :continuous
-                    ex = exposure!(cam)
-                    camSettings.exposureTime = parse(Float64,ex)
+                    ex,mode = exposure!(cam)
+                    camSettings.exposureTime = ex
                 end
                 lastCamSettings.exposureAuto = camSettings.exposureAuto
                 lastCamSettings.exposureTime = camSettings.exposureTime
@@ -114,13 +115,13 @@ function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
                 if camSettings.gainAuto == :off
                     gain!(cam,camSettings.gain)
                 elseif camSettings.gainAuto == :once
-                    g = gain!(cam)
-                    camSettings.gain = parse(Float64,g)
+                    g,mode = gain!(cam)
+                    camSettings.gain = g
                     gain!(cam,g) # Required to set cam back to fixed gain
                     camSettings.gainAuto = :off
                 elseif camSettings.gainAuto == :continuous
-                    g = gain!(cam)
-                    camSettings.gain = parse(Float64,g)
+                    g,mode = gain!(cam)
+                    camSettings.gain = g
                 end
                 lastCamSettings.gainAuto = camSettings.gainAuto
                 lastCamSettings.gain = camSettings.gain
@@ -135,6 +136,7 @@ function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
                 camrunning = true
                 lastCamSettings.width = camSettings.width
                 lastCamSettings.height = camSettings.height
+                camSettingsLimitsUpdater!(cam,camSettingsLimits)
             end
 
             # IMAGE OFFSET
