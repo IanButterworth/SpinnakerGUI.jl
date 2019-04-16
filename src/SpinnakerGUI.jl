@@ -11,7 +11,7 @@ camGPIO = GPIO()
 camGPIOLimits = GPIOLimits()
 
 # Load camera framework
-ENV["USE_DUMMYCAM"] = 1         #Force dummycam
+ENV["USE_DUMMYCAM"] = 0         #Force dummycam
 @static if Sys.isapple() || ENV["USE_DUMMYCAM"]=="1"  # Spinnaker not currently available for MacOS or CI testing
     include("camera-dummy.jl")
 else
@@ -34,7 +34,7 @@ include("gui.jl")
 
 function start()
     global gui_open
-    gui_open = true # Async means you have to assume it's open - could be improved 
+    gui_open = true # Async means you have to assume it's open - could be improved
     # Start gui (operates asynchronously at at ~60 FPS)
     @async_errhandle gui(timerInterval=1/60)
 
