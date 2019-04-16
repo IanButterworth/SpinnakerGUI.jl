@@ -96,15 +96,15 @@ function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
             # EXPOSURE
             if (camSettings.exposureAuto != lastCamSettings.exposureAuto) || (camSettings.exposureTime != lastCamSettings.exposureTime)
                 if camSettings.exposureAuto == :off
-                    exposure!(cam,camSettings.exposureTime)
+                    exposure!(cam,camSettings.exposureTime*1000)
                 elseif camSettings.exposureAuto == :once
                     ex,mode = exposure!(cam)
-                    camSettings.exposureTime = ex
+                    camSettings.exposureTime = ex./1000
                     exposure!(cam,ex) # Required to set cam back to fixed exposure
                     camSettings.exposureAuto = :off
                 elseif camSettings.exposureAuto == :continuous
                     ex,mode = exposure!(cam)
-                    camSettings.exposureTime = ex
+                    camSettings.exposureTime = ex./1000
                 end
                 lastCamSettings.exposureAuto = camSettings.exposureAuto
                 lastCamSettings.exposureTime = camSettings.exposureTime
@@ -160,7 +160,7 @@ end
 function camSettingsLimitsUpdater!(cam,camSettingsLimits::settingsLimits)
     # General Settings
     camSettingsLimits.acquisitionFramerate = framerate_limits(cam)
-    camSettingsLimits.exposureTime = exposure_limits(cam)
+    camSettingsLimits.exposureTime = exposure_limits(cam)./1000
     camSettingsLimits.gain = gain_limits(cam)
 
     # Image size
