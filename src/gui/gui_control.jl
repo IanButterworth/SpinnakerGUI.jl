@@ -20,8 +20,10 @@ control_no_bring_to_front = false
 Show control window with camera info and controls.
 """
 function ShowControlWindow(p_open::Ref{Bool})
-    global cam, camImage, camRunning
+    global cam, camImage
     global camSettings, camGPIO
+
+    camIsRunning = isrunning(cam)
 
     # Control window
     # demonstrate the various window flags. typically you would just use the default!
@@ -77,6 +79,7 @@ function ShowControlWindow(p_open::Ref{Bool})
         CImGui.SameLine()
         once = CImGui.Button("Auto exp. once")
 
+        #=
         items = map(x->string(x),camSettingsLimits.exposureMode)
         CImGui.PushItemWidth(50); CImGui.SameLine()
         @cstatic item_current="timed" begin #NOT LINKED!!
@@ -90,6 +93,7 @@ function ShowControlWindow(p_open::Ref{Bool})
                 CImGui.EndCombo()
             end
         end
+        =#
         if once || (camSettings.exposureAuto == :once) # Keep `once` if pending
             camSettings.exposureAuto = :once
         elseif ctrl_auto
@@ -160,7 +164,7 @@ function ShowControlWindow(p_open::Ref{Bool})
             camSettingsLimits.offsetX[2], "%i")
         camSettings.offsetX = ctrl_val
     end
-    if !camRunning
+    if !camIsRunning
         CImGui.SameLine()
         ## IMAGE WIDTH
         @cstatic ctrl_val=Cint(100) begin
@@ -181,7 +185,7 @@ function ShowControlWindow(p_open::Ref{Bool})
             camSettingsLimits.offsetY[2], "%i")
         camSettings.offsetY = ctrl_val
     end
-    if !camRunning
+    if !camIsRunning
         CImGui.SameLine()
         ## IMAGE HEIGHT
         @cstatic ctrl_val=Cint(100) begin
@@ -197,15 +201,12 @@ function ShowControlWindow(p_open::Ref{Bool})
 
     ## PLAY/PAUSE
     @cstatic begin
-        if camRunning
-            if CImGui.Button("Pause",(100,100))
-                stop!(cam)
-                camRunning = false
-            end
+        if camIsRunning
+            CImGui.Button("Pause",(100,100)) && stop!(cam)
         else
             if CImGui.Button("Run",(100,100))
+                #cam = cam_init()
                 start!(cam)
-                camRunning = true
             end
         end
     end

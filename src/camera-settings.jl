@@ -85,7 +85,7 @@ function camSettingsRead!(cam,camSettings)
 end
 
 function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
-    global camSettings, camSettingsLimits, camRunning
+    global camSettings, camSettingsLimits
     global camGPIO, camGPIOLimits
 
     updateTimer = Timer(0,interval=timerInterval)
@@ -93,13 +93,14 @@ function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
     lastCamGPIO = deepcopy(camGPIO)
     while gui_open
         t_before = time()
-        if camRunning
+        if isrunning(cam)
             # FRAMERATE
             if (camSettings.acquisitionFramerate != lastCamSettings.acquisitionFramerate)
                 framerate!(cam,camSettings.acquisitionFramerate)
                 camSettingsLimits.exposureTime = (0.0,1000/camSettings.acquisitionFramerate)
                 lastCamSettings.acquisitionFramerate = camSettings.acquisitionFramerate
                 camSettingsLimitsUpdater!(cam,camSettingsLimits)
+                camSettingsRead!(cam,camSettings)
             end
 
             # EXPOSURE
@@ -114,11 +115,14 @@ function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
                     camSettings.exposureAuto = :off
                 elseif camSettings.exposureAuto == :continuous
                     exposure!(cam)
-                    ex,mode = exposure(cam)
-                    camSettings.exposureTime = ex/1000
                 end
                 lastCamSettings.exposureAuto = camSettings.exposureAuto
                 lastCamSettings.exposureTime = camSettings.exposureTime
+            end
+            if (camSettings.exposureAuto == :continuous) || (camSettings.exposureAuto == :once)
+                ex,mode = exposure(cam)
+                println(ex/1000)
+                camSettings.exposureTime = ex/1000
             end
 
             # GAIN

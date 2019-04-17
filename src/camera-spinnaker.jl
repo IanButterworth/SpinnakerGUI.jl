@@ -10,35 +10,29 @@ function cam_init(;camid::Int64=0)
     else
         cam = camlist[camid]
         camSettingsRead!(cam,camSettings)
+        camSettingsLimitsUpdater!(cam,camSettingsLimits)
     end
     return cam
 end
 # Main functions
 function runCamera()
     global perfGrabFramerate
-    global cam, camImage, camImageFrameBuffer, camRunning
+    global cam, camImage, camImageFrameBuffer
     global camSettings, camSettingsLimits
 
-
-    camSettingsLimitsUpdater!(cam,camSettingsLimits)
-    camSettings.width = camSettingsLimits.width[2]
-    camSettings.height = camSettingsLimits.height[2]
     camImage = Array{UInt8}(undef,camSettings.width,camSettings.height)
-    imagedims!(cam,(camSettings.width,camSettings.height))
 
     start!(cam)
-    camRunning = true
 
     perfGrabTime = time()
+    grabNotRunningTimer = Timer(0.0,interval=1/100)
     while gui_open
-        if camRunning
-            #cim_id, cim_timestamp, cim_exposure = getimage!(camera, previewimage)
+        if isrunning(cam)
             try
-                getimage!(cam,camImage,normalize=false)
+                cim_id, cim_timestamp, cim_exposure = getimage!(cam,camImage,normalize=false)
             catch err
-                if err isa EOFError
-                    # Do nothing. This happens if the camera is stopped before the camRunning
-                    # bool is set due to async
+                if err isa EOFError || occursin("SPINNAKER_ERR_IO(-1010)",sprint(showerror, err))
+                    @warn "Framegrab error"
                 else
                     rethrow()
                 end
@@ -46,10 +40,12 @@ function runCamera()
             # Loop timing
             perfGrabFramerate = 1/(time() - perfGrabTime)
             perfGrabTime = time()
+            yield()
+        else
+            wait(grabNotRunningTimer)
         end
-        yield()
+
     end
-    stop!(cam)
-    camRunning = false
+    isrunning(cam) && stop!(cam)
 
 end

@@ -5,7 +5,6 @@ include("utils.jl")
 # camera settings
 include("camera-settings.jl")
 cam = nothing
-camRunning = false
 camSettings = settings()
 camSettingsLimits = settingsLimits()
 camGPIO = GPIO()

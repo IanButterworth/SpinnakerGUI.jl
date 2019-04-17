@@ -101,7 +101,7 @@ function gui(;timerInterval::AbstractFloat=1/60)
 
             # show image example
             CImGui.Begin("Raw Video Preview")
-            previewWindowWidth = CImGui.GetWindowWidth() - 30
+            previewWindowWidth = CImGui.GetWindowWidth() - 20
             previewWindowHeight = CImGui.GetWindowHeight() - 40 # subtracting top bar
             previewWindowAspect = previewWindowWidth / previewWindowHeight
 
@@ -112,7 +112,6 @@ function gui(;timerInterval::AbstractFloat=1/60)
             camImageAspect = camImageSize[1]/camImageSize[2]
 
             if camImageSize != previousSize || firstLoop # creat texture for image drawing
-                wait(Timer(0.5))    # Force a long wait as changing the image size was causing a segfault if GUI updated too quickly (likely async related)
                 image_id = ImGui_ImplOpenGL3_CreateImageTexture(camImageSize[1], camImageSize[2])
                 previousSize = camImageSize
             end

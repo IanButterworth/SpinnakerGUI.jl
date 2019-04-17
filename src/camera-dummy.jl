@@ -29,7 +29,7 @@ function start!(cam::String)
     dummycamTimer = Timer(0.0,interval=1/camSettings.acquisitionFramerate)
 end
 function stop!(cam::String)
-    global dummycamTimer, camRunning
+    global dummycamTimer
     close(dummycamTimer)
     dummycamTimer = nothing
 end
@@ -47,6 +47,9 @@ end
 function sensordims(cam::String)
     return (2048,1536)
 end
+function isrunning(cam::String)
+    return camRunning
+end
 
 # Helper functions for dummy behaviour
 function updateExposureFactor(exposure,gain)
@@ -58,7 +61,7 @@ end
 function runCamera()
     global dummycamTimer
     global perfGrabFramerate
-    global cam, camImage, camImageFrameBuffer, camRunning
+    global cam, camImage, camImageFrameBuffer
     global camSettingsLimits
 
     # Initialize dummy camera
@@ -67,13 +70,12 @@ function runCamera()
     camSettingsLimitsUpdater!(cam,camSettingsLimits)
 
     start!(cam)
-    camRunning = true
 
     camImage = Array{UInt8}(undef,camSettings.width,camSettings.height)
 
     perfGrabTime = time()
     while gui_open
-        if camRunning
+        if isrunning(cam)
             #cim_id, cim_timestamp, cim_exposure = getimage!(camera, previewimage)
             try
                 getimage!(cam,camImage,normalize=false)
