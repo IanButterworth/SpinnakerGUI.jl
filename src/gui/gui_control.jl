@@ -76,9 +76,6 @@ function ShowControlWindow(p_open::Ref{Bool})
             camSettingsLimits.exposureTime[2], "%.3f")
         CImGui.SameLine()
         @c CImGui.Checkbox("Auto exp.", &ctrl_auto)
-        CImGui.SameLine()
-        once = CImGui.Button("Auto exp. once")
-
         #=
         items = map(x->string(x),camSettingsLimits.exposureMode)
         CImGui.PushItemWidth(50); CImGui.SameLine()
@@ -94,11 +91,9 @@ function ShowControlWindow(p_open::Ref{Bool})
             end
         end
         =#
-        if once || (camSettings.exposureAuto == :once) # Keep `once` if pending
-            camSettings.exposureAuto = :once
-        elseif ctrl_auto
+        if ctrl_auto
             camSettings.exposureAuto = :continuous
-        elseif !ctrl_auto
+        else
             camSettings.exposureAuto = :off
             camSettings.exposureTime = ctrl_exposure
         end
@@ -114,14 +109,10 @@ function ShowControlWindow(p_open::Ref{Bool})
             camSettingsLimits.gain[2], "%.3f")
         CImGui.SameLine()
         @c CImGui.Checkbox("Auto Gain", &ctrl_autogain)
-        CImGui.SameLine()
-        gainAutoOnce = CImGui.Button("Auto gain once")
 
-        if gainAutoOnce || (camSettings.gainAuto == :once) # Keep `once` if pending
-            camSettings.gainAuto = :once
-        elseif ctrl_autogain
+        if ctrl_autogain
             camSettings.gainAuto = :continuous
-        elseif !ctrl_autogain
+        else
             camSettings.gainAuto = :off
             camSettings.gain = ctrl_gain
         end
@@ -162,7 +153,7 @@ function ShowControlWindow(p_open::Ref{Bool})
         @c CImGui.SliderInt("Offset X", &ctrl_val,
             camSettingsLimits.offsetX[1],
             camSettingsLimits.offsetX[2], "%i")
-        camSettings.offsetX = ctrl_val
+        camSettings.offsetX = 2*(round(ctrl_val/2,RoundToZero))
     end
     if !camIsRunning
         CImGui.SameLine()
@@ -173,7 +164,7 @@ function ShowControlWindow(p_open::Ref{Bool})
             @c CImGui.SliderInt("Width", &ctrl_val,
                 camSettingsLimits.width[1],
                 camSettingsLimits.width[2], "%i")
-            camSettings.width = ctrl_val
+            camSettings.width = 2*(round(ctrl_val/2,RoundToZero))
         end
     end
     ## IMAGE OFFSET Y
@@ -183,7 +174,7 @@ function ShowControlWindow(p_open::Ref{Bool})
         @c CImGui.SliderInt("Offset Y", &ctrl_val,
             camSettingsLimits.offsetY[1],
             camSettingsLimits.offsetY[2], "%i")
-        camSettings.offsetY = ctrl_val
+        camSettings.offsetY = 2*(round(ctrl_val/2,RoundToZero))
     end
     if !camIsRunning
         CImGui.SameLine()
@@ -194,7 +185,7 @@ function ShowControlWindow(p_open::Ref{Bool})
             @c CImGui.SliderInt("Height", &ctrl_val,
                 camSettingsLimits.height[1],
                 camSettingsLimits.height[2], "%i")
-            camSettings.height = ctrl_val
+            camSettings.height = 2*(round(ctrl_val/2,RoundToZero))
         end
     end
 
@@ -204,9 +195,7 @@ function ShowControlWindow(p_open::Ref{Bool})
         if camIsRunning
             CImGui.Button("Pause",(100,100)) && stop!(cam)
         else
-            if CImGui.Button("Run",(100,100))
-                #cam = cam_init()
-                start!(cam)
+            if CImGui.Button("Run",(100,100)) && start!(cam)
             end
         end
     end

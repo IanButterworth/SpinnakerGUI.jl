@@ -10,7 +10,8 @@ function cam_init(;camid::Int64=0)
     else
         cam = camlist[camid]
         camSettingsRead!(cam,camSettings)
-        camSettingsLimitsUpdater!(cam,camSettingsLimits)
+        camSettingsLimitsRead!(cam,camSettingsLimits)
+        buffermode!(cam,"NewestOnly")
     end
     return cam
 end
@@ -23,13 +24,18 @@ function runCamera()
     camImage = Array{UInt8}(undef,camSettings.width,camSettings.height)
 
     start!(cam)
+    camSettingsLimitsRead!(cam,camSettingsLimits) #some things change once running
+
 
     perfGrabTime = time()
-    grabNotRunningTimer = Timer(0.0,interval=1/100)
+    grabNotRunningTimer = Timer(0.0,interval=1/5)
+    firstframe = true
     while gui_open
         if isrunning(cam)
+            firstframe && (camImage = Array{UInt8}(undef,camSettings.width,camSettings.height))
             try
-                cim_id, cim_timestamp, cim_exposure = getimage!(cam,camImage,normalize=false)
+                cim_id, cim_timestamp, cim_exposure = getimage!(cam,camImage,normalize=false,timeout=1000)
+                firstframe = false
             catch err
                 if err isa EOFError || occursin("SPINNAKER_ERR_IO(-1010)",sprint(showerror, err))
                     @warn "Framegrab error"
@@ -42,6 +48,7 @@ function runCamera()
             perfGrabTime = time()
             yield()
         else
+            firstframe = true
             wait(grabNotRunningTimer)
         end
 

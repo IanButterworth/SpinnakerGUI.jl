@@ -32,6 +32,7 @@ Base.@kwdef mutable struct settingsLimits
     exposureMode::Vector{Symbol} = [:timed,:triggerWidth]
     exposureAuto::Vector{Symbol} = [:off,:once,:continuous]
     exposureTime::Tuple{AbstractFloat,AbstractFloat} = (0.0,100.0)
+    autoExposureTime::Tuple{AbstractFloat,AbstractFloat} = (0.0,100.0)
     gainAuto::Vector{Symbol} = [:off,:once,:continuous]
     gain::Tuple{AbstractFloat,AbstractFloat} = (0.0,10.0)
     gamma::Tuple{AbstractFloat,AbstractFloat} = (0.0,10.0)
@@ -84,13 +85,27 @@ function camSettingsRead!(cam,camSettings)
     camSettings.offsetX,camSettings.offsetY = offsetdims(cam)
 end
 
+function camSettingsLimitsRead!(cam,camSettingsLimits)
+    camSettingsLimits.acquisitionFramerate = framerate_limits(cam)
+    camSettingsLimits.exposureTime = exposure_limits(cam)./1000
+    camSettingsLimits.autoExposureTime = autoexposure_limits(cam)./1000
+
+    camSettingsLimits.gain = gain_limits(cam)
+
+    # Image size
+    camSettingsLimits.width,camSettingsLimits.height = imagedims_limits(cam)
+    camSettingsLimits.offsetX,camSettingsLimits.offsetY = offsetdims_limits(cam)
+end
+
 function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
     global camSettings, camSettingsLimits
     global camGPIO, camGPIOLimits
 
     updateTimer = Timer(0,interval=timerInterval)
     lastCamSettings = deepcopy(camSettings)
+    lastCamSettingsLimits = deepcopy(camSettingsLimits)
     lastCamGPIO = deepcopy(camGPIO)
+    first_autoexposure = true
     while gui_open
         t_before = time()
         if isrunning(cam)
@@ -99,64 +114,73 @@ function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
                 framerate!(cam,camSettings.acquisitionFramerate)
                 camSettingsLimits.exposureTime = (0.0,1000/camSettings.acquisitionFramerate)
                 lastCamSettings.acquisitionFramerate = camSettings.acquisitionFramerate
-                camSettingsLimitsUpdater!(cam,camSettingsLimits)
+                camSettingsLimitsRead!(cam,camSettingsLimits)
                 camSettingsRead!(cam,camSettings)
+                if camSettings.exposureAuto != :off
+                    camSettingsLimits.autoExposureTime = autoexposure_limits!(cam,(0,1e9)) #intentionally too small/large to find lims
+                end
             end
 
             # EXPOSURE
             if (camSettings.exposureAuto != lastCamSettings.exposureAuto) || (camSettings.exposureTime != lastCamSettings.exposureTime)
                 if camSettings.exposureAuto == :off
                     exposure!(cam,camSettings.exposureTime*1000)
-                elseif camSettings.exposureAuto == :once
-                    exposure!(cam)
-                    ex,mode = exposure(cam)
-                    camSettings.exposureTime = ex/1000
-                    exposure!(cam,ex) # Required to set cam back to fixed exposure
-                    camSettings.exposureAuto = :off
                 elseif camSettings.exposureAuto == :continuous
                     exposure!(cam)
                 end
                 lastCamSettings.exposureAuto = camSettings.exposureAuto
                 lastCamSettings.exposureTime = camSettings.exposureTime
             end
-            if (camSettings.exposureAuto == :continuous) || (camSettings.exposureAuto == :once)
+            if camSettings.exposureAuto != :off
                 ex,mode = exposure(cam)
-                println(ex/1000)
                 camSettings.exposureTime = ex/1000
+                if first_autoexposure
+                    #Catches first opportunity to set auto exposure lims, in case framerate hasn't changed first
+                    #(can only be set when auto exposure is enabled)
+                    camSettingsLimits.autoExposureTime = autoexposure_limits!(cam,(0,1e9)) #intentionally too small/large to find lims
+                    first_autoexposure = false
+                end
             end
 
             # GAIN
             if (camSettings.gainAuto != lastCamSettings.gainAuto) || (camSettings.gain != lastCamSettings.gain)
                 if camSettings.gainAuto == :off
                     gain!(cam,camSettings.gain)
-                elseif camSettings.gainAuto == :once
-                    gain!(cam)
-                    g,mode = gain(cam)
-                    camSettings.gain = g
-                    gain!(cam,g) # Required to set cam back to fixed gain
-                    camSettings.gainAuto = :off
                 elseif camSettings.gainAuto == :continuous
                     gain!(cam)
-                    g,mode = gain(cam)
-                    camSettings.gain = g
                 end
                 lastCamSettings.gainAuto = camSettings.gainAuto
                 lastCamSettings.gain = camSettings.gain
             end
-
-            # IMAGE SIZE
-            if (camSettings.width != lastCamSettings.width) || (camSettings.height != lastCamSettings.height)
-                imagedims!(cam,(camSettings.width,camSettings.height))
-                lastCamSettings.width = camSettings.width
-                lastCamSettings.height = camSettings.height
-                camSettingsLimitsUpdater!(cam,camSettingsLimits)
+            if camSettings.gainAuto != :off
+                camSettings.gain, _ = gain(cam)
             end
 
             # IMAGE OFFSET
             if (camSettings.offsetX != lastCamSettings.offsetX) || (camSettings.offsetY != lastCamSettings.offsetY)
-                offsetdims!(cam,(camSettings.offsetX,camSettings.offsetY))
-                lastCamSettings.offsetX = camSettings.offsetX
-                lastCamSettings.offsetY = camSettings.offsetY
+                try
+                    offsetdims!(cam,(camSettings.offsetX,camSettings.offsetY))
+                    lastCamSettings.offsetX = camSettings.offsetX
+                    lastCamSettings.offsetY = camSettings.offsetY
+                catch e
+                    @info "Selected x or y offset not allowed"
+                    camSettings.offsetX = lastCamSettings.offsetX
+                    camSettings.offsetY = lastCamSettings.offsetY
+                end
+            end
+        else
+            # IMAGE SIZE (Can't be set while running)
+            if (camSettings.width != lastCamSettings.width) || (camSettings.height != lastCamSettings.height)
+                try
+                    imagedims!(cam,(camSettings.width,camSettings.height))
+                    lastCamSettings.width = camSettings.width
+                    lastCamSettings.height = camSettings.height
+                    camSettingsLimitsRead!(cam,camSettingsLimits)
+                catch e
+                    @info "Selected width or height not allowed"
+                    camSettings.width = lastCamSettings.width
+                    camSettings.height = lastCamSettings.height
+                end
             end
         end
         if time()-t_before < timerInterval
@@ -168,17 +192,6 @@ function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
     end
     close(updateTimer)
     updateTimer = nothing
-end
-
-function camSettingsLimitsUpdater!(cam,camSettingsLimits::settingsLimits)
-    # General Settings
-    camSettingsLimits.acquisitionFramerate = framerate_limits(cam)
-    camSettingsLimits.exposureTime = exposure_limits(cam)./1000
-    camSettingsLimits.gain = gain_limits(cam)
-
-    # Image size
-    camSettingsLimits.width,camSettingsLimits.height = imagedims_limits(cam)
-    camSettingsLimits.offsetX,camSettingsLimits.offsetY = offsetdims_limits(cam)
 end
 
 function camGPIOLimitsUpdater!(camGPIOLimits::GPIOLimits)
