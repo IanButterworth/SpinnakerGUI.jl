@@ -195,8 +195,7 @@ function ShowControlWindow(p_open::Ref{Bool})
         if camIsRunning
             CImGui.Button("Pause",(100,100)) && stop!(cam)
         else
-            if CImGui.Button("Run",(100,100)) && start!(cam)
-            end
+            CImGui.Button("Run",(100,100)) && start!(cam)
         end
     end
 
