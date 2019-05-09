@@ -4,14 +4,18 @@ using Spinnaker
 
 function cam_init(;camid::Int64=0)
     global camSettings
+    @info "Checking for cameras"
     camlist = Spinnaker.CameraList()
     if length(camlist) == 0
         error("No camera found")
     else
+        @info "Selecting camera $camid"
         cam = camlist[camid]
+        @info "Reading settings from camera"
         camSettingsRead!(cam,camSettings)
         camSettingsLimitsRead!(cam,camSettingsLimits)
         buffermode!(cam,"NewestOnly")
+        @info "Camera ready"
     end
     return cam
 end

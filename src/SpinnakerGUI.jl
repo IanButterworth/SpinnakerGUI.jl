@@ -30,6 +30,7 @@ control_open = true
 perfGrabFramerate = 0.0
 
 
+
 include("gui.jl")
 
 function start(;camid::Int64=0)
@@ -39,12 +40,15 @@ function start(;camid::Int64=0)
 
     gui_open = true # Async means you have to assume it's open - could be improved
     # Start gui (operates asynchronously at at ~60 FPS)
+    @info "Starting GUI (async)"
     @async_errhandle gui(timerInterval=1/60)
 
     # Start settings updater (operates asynchronously at at ~10 FPS)
+    @info "Starting Camera Settings Updater (async)"
     @async_errhandle camSettingsUpdater(timerInterval=1/10)
 
     # Run camera control with priority
+    @info "Starting Camera Acquisition"
     runCamera()
 
     @info "SpinnakerGUI: Successful exit"
