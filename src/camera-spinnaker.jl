@@ -34,18 +34,20 @@ function runCamera()
         if isrunning(cam)
             firstframe && (camImage = Array{UInt8}(undef,camSettings.width,camSettings.height))
             try
-                cim_id, cim_timestamp, cim_exposure = getimage!(cam,camImage,normalize=false,timeout=1000)
+                cim_id, cim_timestamp, cim_exposure = getimage!(cam,camImage,normalize=false,timeout=0)
                 firstframe = false
+                # Loop timing
+                perfGrabFramerate = 1/(time() - perfGrabTime)
+                perfGrabTime = time()
             catch err
-                if err isa EOFError || occursin("SPINNAKER_ERR_IO(-1010)",sprint(showerror, err))
+                if occursin("SPINNAKER_ERR_TIMEOUT(-1011)",sprint(showerror, err))
+                    # No frame available
+                elseif err isa EOFError || occursin("SPINNAKER_ERR_IO(-1010)",sprint(showerror, err))
                     @warn "Framegrab error"
                 else
                     rethrow()
                 end
             end
-            # Loop timing
-            perfGrabFramerate = 1/(time() - perfGrabTime)
-            perfGrabTime = time()
             yield()
         else
             firstframe = true
