@@ -32,11 +32,10 @@ function runCamera()
     start!(cam)
     camSettingsLimitsRead!(cam,camSettingsLimits) #some things change once running
 
-
     perfGrabTime = time()
     grabNotRunningTimer = Timer(0.0,interval=1/5)
     firstframe = true
-    while gui_open
+    while !sessionStat.terminate
         if isrunning(cam)
             firstframe && (camImage = Array{UInt8}(undef,camSettings.width,camSettings.height))
             try

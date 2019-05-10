@@ -19,7 +19,7 @@ function videowritelistener(;compression=0,overwrite=false, fps=60.0, options=``
     global sessionStat
     global camImageFrameBuffer
 
-    while gui_open
+    while !sessionStat.terminate
         if length(camImageFrameBuffer) > 0
             sessionStat.savedframes = 0
             fname = string(Dates.format(now(), "yyyy-mm-dd_HHMMSS"),".avi")
@@ -32,7 +32,7 @@ function videowritelistener(;compression=0,overwrite=false, fps=60.0, options=``
                     -crf $crf -pix_fmt yuv422p
                     $options -vf "transpose=1,pad=ceil($w/2)\*2:ceil($h/2)\*2"
                     $fname`, "w") do out
-                    while length(camImageFrameBuffer) > 0 || sessionStat.recording
+                    while length(camImageFrameBuffer) > 0 || sessionStat.recording || !sessionStat.terminate
                         while length(camImageFrameBuffer) == 0 && sessionStat.recording
                             yield() #wait without blocking during recording time
                         end
