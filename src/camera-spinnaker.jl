@@ -24,6 +24,8 @@ function runCamera()
     global perfGrabFramerate
     global cam, camImage, camImageFrameBuffer
     global camSettings, camSettingsLimits
+    global sessionStat
+    global camImageFrameBuffer
 
     camImage = Array{UInt8}(undef,camSettings.width,camSettings.height)
 
@@ -40,6 +42,10 @@ function runCamera()
             try
                 cim_id, cim_timestamp, cim_exposure = getimage!(cam,camImage,normalize=false,timeout=0)
                 firstframe = false
+
+                if sessionStat.recording
+                    push!(camImageFrameBuffer,camImage)
+                end
                 # Loop timing
                 perfGrabFramerate = 1/(time() - perfGrabTime)
                 perfGrabTime = time()
@@ -47,7 +53,7 @@ function runCamera()
                 if occursin("SPINNAKER_ERR_TIMEOUT(-1011)",sprint(showerror, err))
                     # No frame available
                 elseif err isa EOFError || occursin("SPINNAKER_ERR_IO(-1010)",sprint(showerror, err))
-                    @warn "Framegrab error"
+                    @warn "Noncritical framegrab error"
                 else
                     rethrow()
                 end

@@ -5,6 +5,12 @@ Base.@kwdef mutable struct information
     deviceFirmwareVersion::String = ""
 end
 
+Base.@kwdef mutable struct sessionStatus
+    recording::Bool = false
+    bufferedframes::Int64 = 0
+    savedframes::Int64 = 0
+end
+
 Base.@kwdef mutable struct settings
     acquisitionMode::Symbol = :continuous #[:continuous,:singleFrame,:multiFrame]
     acquisitionFramerate::AbstractFloat = 30.0
@@ -98,10 +104,12 @@ function camSettingsLimitsRead!(cam,camSettingsLimits)
 end
 
 function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
+    global sessionStat
     global camSettings, camSettingsLimits
     global camGPIO, camGPIOLimits
 
     updateTimer = Timer(0,interval=timerInterval)
+    lastSessionStat = deepcopy(sessionStat)
     lastCamSettings = deepcopy(camSettings)
     lastCamSettingsLimits = deepcopy(camSettingsLimits)
     lastCamGPIO = deepcopy(camGPIO)
@@ -109,6 +117,15 @@ function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
     while gui_open
         t_before = time()
         if isrunning(cam)
+
+            # RECORDING
+            if sessionStat.recording != lastSessionStat.recording
+                if sessionStat.recording
+                    buffermode!(cam,"OldestFirst")
+                else
+                    buffermode!(cam,"NewestOnly")
+                end
+            end
             # FRAMERATE
             if (camSettings.acquisitionFramerate != lastCamSettings.acquisitionFramerate)
                 framerate!(cam,camSettings.acquisitionFramerate)

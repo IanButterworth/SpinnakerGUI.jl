@@ -22,6 +22,7 @@ Show control window with camera info and controls.
 function ShowControlWindow(p_open::Ref{Bool})
     global cam, camImage
     global camSettings, camGPIO
+    global sessionStat
 
     camIsRunning = isrunning(cam)
 
@@ -51,9 +52,8 @@ function ShowControlWindow(p_open::Ref{Bool})
     # CImGui.PushItemWidth(CImGui.GetWindowWidth() * 0.65)    # use 2/3 of the space for widgets and 1/3 for labels (default)
     CImGui.PushItemWidth(CImGui.GetFontSize() * -12)        # use fixed width for labels (by passing a negative value), the rest goes to widgets. We choose a width proportional to our font size.
 
-    CImGui.Text(@sprintf("Display: %.2f ms/frame (%.1f FPS)", 1000 / CImGui.GetIO().Framerate, CImGui.GetIO().Framerate))
-    CImGui.Text(@sprintf("Framegrab: %.2f ms/frame (%.1f FPS)", 1000 / perfGrabFramerate, perfGrabFramerate))
-    CImGui.Text(@sprintf("Camera: %.1f FPS. Exposure %.1f ms", camSettings.acquisitionFramerate, camSettings.exposureTime))
+    CImGui.Text(@sprintf("Display: %.1f FPS", CImGui.GetIO().Framerate))
+    CImGui.Text(@sprintf("Framegrab: %.1f FPS", perfGrabFramerate))
     CImGui.Spacing()
     CImGui.Text("Settings")
     ## FRAMERATE
@@ -104,7 +104,7 @@ function ShowControlWindow(p_open::Ref{Bool})
         ctrl_gain = Cfloat(camSettings.gain)
         ctrl_autogain = (camSettings.gainAuto == :continuous)
         CImGui.PushItemWidth(200)
-        @c CImGui.SliderFloat("Gain", &ctrl_gain,
+        @c CImGui.SliderFloat("Gain (dB)", &ctrl_gain,
             camSettingsLimits.gain[1],
             camSettingsLimits.gain[2], "%.3f")
         CImGui.SameLine()
@@ -193,10 +193,21 @@ function ShowControlWindow(p_open::Ref{Bool})
     ## PLAY/PAUSE
     @cstatic begin
         if camIsRunning
-            CImGui.Button("Pause",(100,100)) && stop!(cam)
+            CImGui.Button("Pause",(200,25)) && stop!(cam)
         else
-            CImGui.Button("Run",(100,100)) && start!(cam)
+            CImGui.Button("Run",(200,25)) && start!(cam)
         end
+    end
+
+    ## RECORDING
+    @cstatic begin
+        if sessionStat.recording
+            CImGui.Button("Stop Recording",(200,25)) && (sessionStat.recording = false)
+        else
+            CImGui.Button("Record",(200,25)) && (sessionStat.recording = true)
+        end
+        CImGui.SameLine()
+        CImGui.Text(@sprintf("Buffered frames: %i. Saved frames: %i", sessionStat.bufferedframes,sessionStat.savedframes))
     end
 
 
