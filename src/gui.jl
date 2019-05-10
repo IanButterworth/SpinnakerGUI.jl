@@ -84,7 +84,7 @@ function gui(;timerInterval::AbstractFloat=1/60)
     looptime = 0.0
     guiTimer = Timer(0,interval=timerInterval)
     firstLoop = true
-    while !GLFW.WindowShouldClose(window)
+    while !GLFW.WindowShouldClose(window) && !sessionStat.terminate
         t_before = time()
         if camImage != nothing
             local_camImage = deepcopy(camImage) #Create copy to prevent async error if size is read at different time to image

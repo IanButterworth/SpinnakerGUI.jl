@@ -5,12 +5,6 @@ Base.@kwdef mutable struct information
     deviceFirmwareVersion::String = ""
 end
 
-Base.@kwdef mutable struct sessionStatus
-    recording::Bool = false
-    bufferedframes::Int64 = 0
-    savedframes::Int64 = 0
-end
-
 Base.@kwdef mutable struct settings
     acquisitionMode::Symbol = :continuous #[:continuous,:singleFrame,:multiFrame]
     acquisitionFramerate::AbstractFloat = 30.0
@@ -114,7 +108,7 @@ function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
     lastCamSettingsLimits = deepcopy(camSettingsLimits)
     lastCamGPIO = deepcopy(camGPIO)
     first_autoexposure = true
-    while gui_open
+    while !sessionStat.terminate
         t_before = time()
         if isrunning(cam)
 

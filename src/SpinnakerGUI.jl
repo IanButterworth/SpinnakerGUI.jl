@@ -1,5 +1,12 @@
 module SpinnakerGUI
 
+Base.@kwdef mutable struct sessionStatus
+    recording::Bool = false
+    bufferedframes::Int64 = 0
+    savedframes::Int64 = 0
+    terminate::Bool = false
+end
+
 include("utils.jl")
 
 # camera settings
@@ -30,32 +37,56 @@ control_open = true
 # performance reporting
 perfGrabFramerate = 0.0
 
+
+
 include("gui.jl")
 include("recording.jl")
 
 function start(;camid::Int64=0)
     global cam, gui_open
+    global sessionStat
 
     cam = cam_init(camid=camid)
 
     gui_open = true # Async means you have to assume it's open - could be improved
     # Start gui (operates asynchronously at at ~60 FPS)
     @info "Starting GUI (async)"
-    @async_errhandle gui(timerInterval=1/60)
+    t_gui = @async_errhandle gui(timerInterval=1/60)
 
     # Start settings updater (operates asynchronously at at ~10 FPS)
     @info "Starting Camera Settings Updater (async)"
-    @async_errhandle camSettingsUpdater(timerInterval=1/10)
+    t_settings = @async_errhandle camSettingsUpdater(timerInterval=1/10)
 
     # Start recording listener
     @info "Starting recording listener (async)"
-    @async_errhandle videowritelistener()
+    t_recorder = @async_errhandle videowritelistener()
 
     # Run camera control with priority
-    @info "Starting Camera Acquisition"
-    runCamera()
-
-    @info "SpinnakerGUI: Successful exit"
+    @info "Starting Camera Acquisition (async)"
+    t_capture = @async_errhandle runCamera()
+    
+    governorTimer = Timer(0.0, interval = 1)
+    while !istaskdone(t_gui) && !istaskdone(t_settings) && !istaskdone(t_recorder) && !istaskdone(t_capture)
+        wait(governorTimer)
+    end
+    
+    if istaskdone(t_gui) && !istaskdone(t_settings) && !istaskdone(t_recorder) && !istaskdone(t_capture)
+        # if the gui finished, and nothing else finished
+        sessionStat.terminate = true; #send terminate bool to async functions
+        
+        while !istaskdone(t_gui) || !istaskdone(t_settings) || !istaskdone(t_recorder) || !istaskdone(t_capture)
+            wait(Timer(0.1))
+        end    
+        @info "SpinnakerGUI: Successful exit"
+    else
+        @info "SpinnakerGUI: Something went wrong:"
+        
+        istaskdone(t_settings) && @info "Camera settings updater crashed"
+        istaskdone(t_recorder) && @info "Record listener crashed"
+        istaskdone(t_capture) && @info "Camera acquisition crashed"
+        
+        sessionStat.terminate = true
+    end
 
 end
 
