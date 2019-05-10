@@ -72,7 +72,7 @@ function start(;camid::Int64=0)
     
     if istaskdone(t_gui) && !istaskdone(t_settings) && !istaskdone(t_recorder) && !istaskdone(t_capture)
         # if the gui finished, and nothing else finished
-        sessionStat.terminate = true; #send terminate bool to async functions
+        sessionStat.terminate = true #send terminate bool to async functions
         
         while !istaskdone(t_gui) || !istaskdone(t_settings) || !istaskdone(t_recorder) || !istaskdone(t_capture)
             wait(Timer(0.1))
@@ -87,7 +87,7 @@ function start(;camid::Int64=0)
         
         sessionStat.terminate = true
     end
-
+    return nothing
 end
 
 

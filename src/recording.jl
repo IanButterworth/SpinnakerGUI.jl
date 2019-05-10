@@ -24,7 +24,9 @@ function videowritelistener(;compression=0,overwrite=false, fps=60.0, options=``
             sessionStat.savedframes = 0
             fname = string(Dates.format(now(), "yyyy-mm-dd_HHMMSS"),".avi")
             h, w = size(camImageFrameBuffer[1])
-            withenv("LD_LIBRARY_PATH" => joinpath(dirname(dirname(pathof(VideoIO))),"deps/usr/bin/")) do
+            withenv("PATH" => VideoIO.libpath, 
+                "LD_LIBRARY_PATH" => VideoIO.libpath, 
+                "DYLD_LIBRARY_PATH" => VideoIO.libpath) do
                 open(`$ffmpegpath
                     -loglevel warning
                     $ow -f rawvideo -pix_fmt gray -s:v $(h)x$(w)
