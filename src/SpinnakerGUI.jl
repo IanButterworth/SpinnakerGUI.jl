@@ -5,6 +5,7 @@ include("utils.jl")
 # camera settings
 include("camera-settings.jl")
 cam = nothing
+sessionStat = sessionStatus()
 camSettings = settings()
 camSettingsLimits = settingsLimits()
 camGPIO = GPIO()
@@ -20,7 +21,7 @@ end
 
 # global image buffers
 camImage = nothing
-camImageFrameBuffer = nothing
+camImageFrameBuffer = Vector{Array{UInt8}}(undef,0)
 
 # GUI settings
 gui_open = nothing
@@ -29,9 +30,8 @@ control_open = true
 # performance reporting
 perfGrabFramerate = 0.0
 
-
-
 include("gui.jl")
+include("recording.jl")
 
 function start(;camid::Int64=0)
     global cam, gui_open
@@ -46,6 +46,10 @@ function start(;camid::Int64=0)
     # Start settings updater (operates asynchronously at at ~10 FPS)
     @info "Starting Camera Settings Updater (async)"
     @async_errhandle camSettingsUpdater(timerInterval=1/10)
+
+    # Start recording listener
+    @info "Starting recording listener (async)"
+    @async_errhandle videowritelistener()
 
     # Run camera control with priority
     @info "Starting Camera Acquisition"
