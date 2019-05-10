@@ -45,6 +45,7 @@ include("recording.jl")
 function start(;camid::Int64=0)
     global cam, gui_open
     global sessionStat
+    sessionStat.terminate = false
 
     cam = cam_init(camid=camid)
 

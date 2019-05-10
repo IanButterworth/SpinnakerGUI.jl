@@ -119,11 +119,11 @@ function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
                 else
                     buffermode!(cam,"NewestOnly")
                 end
+                lastSessionStat.recording = sessionStat.recording
             end
             # FRAMERATE
             if (camSettings.acquisitionFramerate != lastCamSettings.acquisitionFramerate)
                 framerate!(cam,camSettings.acquisitionFramerate)
-                camSettingsLimits.exposureTime = (0.0,1000/camSettings.acquisitionFramerate)
                 lastCamSettings.acquisitionFramerate = camSettings.acquisitionFramerate
                 camSettingsLimitsRead!(cam,camSettingsLimits)
                 camSettingsRead!(cam,camSettings)
