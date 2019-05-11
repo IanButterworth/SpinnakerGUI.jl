@@ -38,10 +38,9 @@ function runCamera()
     while !sessionStat.terminate
         if isrunning(cam)
             firstframe && (camImage = Array{UInt8}(undef,camSettings.width,camSettings.height))
+            firstframe = false
             try
                 cim_id, cim_timestamp, cim_exposure = getimage!(cam,camImage,normalize=false,timeout=0)
-                firstframe = false
-
                 if sessionStat.recording
                     push!(camImageFrameBuffer,camImage)
                 end
@@ -51,6 +50,7 @@ function runCamera()
             catch err
                 if occursin("SPINNAKER_ERR_TIMEOUT(-1011)",sprint(showerror, err))
                     # No frame available
+                    #println("No frame available")
                 elseif err isa EOFError || occursin("SPINNAKER_ERR_IO(-1010)",sprint(showerror, err))
                     @warn "Noncritical framegrab error"
                 else
@@ -61,6 +61,7 @@ function runCamera()
         else
             firstframe = true
             wait(grabNotRunningTimer)
+            #println("Not running")
         end
 
     end
