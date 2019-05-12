@@ -72,17 +72,19 @@ function start(;camid::Int64=0)
         wait(governorTimer)
     end
     
-    if istaskdone(t_gui) && !istaskdone(t_settings) && !istaskdone(t_recorder) && !istaskdone(t_capture)
+    if !gui_open && istaskdone(t_gui) && !istaskdone(t_settings) && !istaskdone(t_recorder) && !istaskdone(t_capture)
         # if the gui finished, and nothing else finished
         sessionStat.terminate = true #send terminate bool to async functions
         
         while !istaskdone(t_gui) || !istaskdone(t_settings) || !istaskdone(t_recorder) || !istaskdone(t_capture)
             wait(Timer(0.1))
-        end    
+        end
         @info "SpinnakerGUI: Successful exit"
     else
+        println("") #Async errors cause a lack of new line
         @info "SpinnakerGUI: Something went wrong:"
         
+        istaskdone(t_gui) && @info "GUI crashed"
         istaskdone(t_settings) && @info "Camera settings updater crashed"
         istaskdone(t_recorder) && @info "Record listener crashed"
         istaskdone(t_capture) && @info "Camera acquisition crashed"

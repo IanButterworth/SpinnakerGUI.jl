@@ -195,7 +195,7 @@ function ShowControlWindow(p_open::Ref{Bool})
         if camIsRunning
             CImGui.Button("Pause",(200,25)) && stop!(cam)
         else
-            CImGui.Button("Run",(200,25)) && startcheckrunningfix!()
+            CImGui.Button("Run",(200,25)) && startcheckrunningfix!(cam)
         end
     end
 
@@ -206,14 +206,14 @@ function ShowControlWindow(p_open::Ref{Bool})
                 sessionStat.recording = false
                 #stop!(cam)
                 #buffermode!(cam,"NewestOnly")
-                #startcheckrunningfix!(bufferMode="OldestFirst")
+                #startcheckrunningfix!(cam,bufferMode="OldestFirst")
             end
         else
             if CImGui.Button("Record",(200,25))
                 sessionStat.recording = true
                 #stop!(cam)
                 #buffermode!(cam,"OldestFirst")
-                #startcheckrunningfix!(bufferMode="OldestFirst")
+                #startcheckrunningfix!(cam,bufferMode="OldestFirst")
             end
         end
         CImGui.SameLine()

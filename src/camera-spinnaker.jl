@@ -30,28 +30,46 @@ function canGetImage(cam)
     end
 end
 
-function startcheckrunningfix!(;bufferMode="NewestOnly")
-    global cam
+"""
+startcheckrunningfix!(cam;bufferMode="NewestOnly")
+
+Attempt a start!(cam) and check if able to grab images. If not, repeatedly reinitialize camera until it works,
+up to attempsmax (5 by default)
+This function exists because of instability experienced with the Grasshopper 3.
+
+"""
+function startcheckrunningfix!(cam;bufferMode="NewestOnly",maxattempts=5)
     try 
         start!(cam)
-        if !canGetImage(cam) || !isrunning(cam)
-            while !canGetImage(cam) || !isrunning(cam)
-                println("Camera Issue: Restarting camera")
-                isrunning(cam) && stop!(cam)
-                cam = cam_init(silent=true,bufferMode=bufferMode)
-                start!(cam)
-            end
-            println("Camera restarted")
-        else
-            @info "Camera started"
-        end
     catch e
+        reinitcam(bufferMode=bufferMode,maxattempts=maxattempts)
+    end  
+    if canGetImage(cam) 
+        @info "Camera started"
+    else
+        reinitcam(bufferMode=bufferMode,maxattempts=maxattempts)
+    end
+          
+end
+
+function reinitcam(;bufferMode="NewestOnly",maxattempts=5)
+    global cam
+    @info "Camera Issue: Reinitializing camera"
+    attempts = 0
+    while !canGetImage(cam) || attempts < maxattempts
+        isrunning(cam) && stop!(cam)
         cam = cam_init(silent=true,bufferMode=bufferMode)
         start!(cam)
-    end        
+        attempts += 1
+    end
+    if attempts == maxattempts
+        error("Camera couldn't be reinitialized (tried $attempts times)")
+    else
+        @info "Camera reinitialized"
+    end
 end
     
-# Main functions
+
 function runCamera()
     global perfGrabFramerate
     global cam, camImage, camImageFrameBuffer
@@ -61,7 +79,7 @@ function runCamera()
 
     camImage = Array{UInt8}(undef,camSettings.width,camSettings.height)
 
-    startcheckrunningfix!(bufferMode="OldestFirst")
+    startcheckrunningfix!(cam,bufferMode="OldestFirst")
     camSettingsLimitsRead!(cam,camSettingsLimits) #some things change once running
 
     perfGrabTime = time()
