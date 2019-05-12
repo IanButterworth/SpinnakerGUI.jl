@@ -44,9 +44,9 @@ function videowritelistener(;compression=0,overwrite=false, options=``)
                         if length(camImageFrameBuffer) >0
                             write(out, camImageFrameBuffer[1])
                             deleteat!(camImageFrameBuffer, 1)
+                            sessionStat.bufferedframes = length(camImageFrameBuffer)
+                            sessionStat.savedframes += 1
                         end
-                        sessionStat.bufferedframes = length(camImageFrameBuffer)
-                        sessionStat.savedframes += 1
                         yield()
                     end
                     filepath = joinpath(pwd(),fname)

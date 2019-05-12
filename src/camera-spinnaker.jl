@@ -2,23 +2,55 @@
 
 using Spinnaker
 
-function cam_init(;camid::Int64=0)
+function cam_init(;camid::Int64=0,silent=false,bufferMode="NewestOnly")
     global camSettings
-    @info "Checking for cameras"
+    !silent && (@info "Checking for cameras")
     camlist = Spinnaker.CameraList()
     if length(camlist) == 0
         error("No camera found")
     else
-        @info "Selecting camera $camid"
+        !silent && (@info "Selecting camera $camid")
         cam = camlist[camid]
-        @info "Reading settings from camera"
+        !silent && (@info "Reading settings from camera")
         camSettingsRead!(cam,camSettings)
         camSettingsLimitsRead!(cam,camSettingsLimits)
-        buffermode!(cam,"NewestOnly")
-        @info "Camera ready"
+        buffermode!(cam,bufferMode)
+        !silent && (@info "Camera ready")
     end
     return cam
 end
+
+
+function canGetImage(cam)
+    try
+        getimage(cam,timeout=2000)
+        return true
+    catch e
+        return false
+    end
+end
+
+function startcheckrunningfix!(;bufferMode="NewestOnly")
+    global cam
+    try 
+        start!(cam)
+        if !canGetImage(cam) || !isrunning(cam)
+            while !canGetImage(cam) || !isrunning(cam)
+                println("Camera Issue: Restarting camera")
+                isrunning(cam) && stop!(cam)
+                cam = cam_init(silent=true,bufferMode=bufferMode)
+                start!(cam)
+            end
+            println("Camera restarted")
+        else
+            @info "Camera started"
+        end
+    catch e
+        cam = cam_init(silent=true,bufferMode=bufferMode)
+        start!(cam)
+    end        
+end
+    
 # Main functions
 function runCamera()
     global perfGrabFramerate
@@ -29,7 +61,7 @@ function runCamera()
 
     camImage = Array{UInt8}(undef,camSettings.width,camSettings.height)
 
-    start!(cam)
+    startcheckrunningfix!(bufferMode="OldestFirst")
     camSettingsLimitsRead!(cam,camSettingsLimits) #some things change once running
 
     perfGrabTime = time()
@@ -43,6 +75,8 @@ function runCamera()
                 cim_id, cim_timestamp, cim_exposure = getimage!(cam,camImage,normalize=false,timeout=0)
                 if sessionStat.recording
                     push!(camImageFrameBuffer,camImage)
+                    sessionStat.bufferedframes = length(camImageFrameBuffer)
+                    sessionStat.droppedframes = bufferunderrun(cam)
                 end
                 # Loop timing
                 perfGrabFramerate = 1/(time() - perfGrabTime)

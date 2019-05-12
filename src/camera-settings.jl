@@ -113,14 +113,7 @@ function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
         if isrunning(cam)
 
             # RECORDING
-            if sessionStat.recording != lastSessionStat.recording
-                if sessionStat.recording
-                    buffermode!(cam,"OldestFirst")
-                else
-                    buffermode!(cam,"NewestOnly")
-                end
-                lastSessionStat.recording = sessionStat.recording
-            end
+            
             # FRAMERATE
             if (camSettings.acquisitionFramerate != lastCamSettings.acquisitionFramerate)
                 framerate!(cam,camSettings.acquisitionFramerate)

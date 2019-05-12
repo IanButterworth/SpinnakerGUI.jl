@@ -195,19 +195,29 @@ function ShowControlWindow(p_open::Ref{Bool})
         if camIsRunning
             CImGui.Button("Pause",(200,25)) && stop!(cam)
         else
-            CImGui.Button("Run",(200,25)) && start!(cam)
+            CImGui.Button("Run",(200,25)) && startcheckrunningfix!()
         end
     end
 
     ## RECORDING
     @cstatic begin
         if sessionStat.recording
-            CImGui.Button("Stop Recording",(200,25)) && (sessionStat.recording = false)
+            if CImGui.Button("Stop Recording",(200,25)) 
+                sessionStat.recording = false
+                #stop!(cam)
+                #buffermode!(cam,"NewestOnly")
+                #startcheckrunningfix!(bufferMode="OldestFirst")
+            end
         else
-            CImGui.Button("Record",(200,25)) && (sessionStat.recording = true)
+            if CImGui.Button("Record",(200,25))
+                sessionStat.recording = true
+                #stop!(cam)
+                #buffermode!(cam,"OldestFirst")
+                #startcheckrunningfix!(bufferMode="OldestFirst")
+            end
         end
         CImGui.SameLine()
-        CImGui.Text(@sprintf("Buffered frames: %i. Saved frames: %i", sessionStat.bufferedframes,sessionStat.savedframes))
+        CImGui.Text(@sprintf("Frames: [%i buffered. %i dropped. %i saved]", sessionStat.bufferedframes,sessionStat.droppedframes,sessionStat.savedframes))
     end
 
 
