@@ -204,16 +204,12 @@ function ShowControlWindow(p_open::Ref{Bool})
         if sessionStat.recording
             if CImGui.Button("Stop Recording",(200,25)) 
                 sessionStat.recording = false
-                #stop!(cam)
-                #buffermode!(cam,"NewestOnly")
-                #startcheckrunningfix!(cam,bufferMode="OldestFirst")
+                buffermode!(cam,"NewestOnly")
             end
         else
             if CImGui.Button("Record",(200,25))
                 sessionStat.recording = true
-                #stop!(cam)
-                #buffermode!(cam,"OldestFirst")
-                #startcheckrunningfix!(cam,bufferMode="OldestFirst")
+                buffermode!(cam,"OldestFirst")
             end
         end
         CImGui.SameLine()

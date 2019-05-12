@@ -51,8 +51,7 @@ function startcheckrunningfix!(cam;bufferMode="NewestOnly",maxattempts=5)
         @info "Camera started"
     else
         reinitcam(bufferMode=bufferMode,maxattempts=maxattempts)
-    end
-          
+    end        
 end
 
 function reinitcam(;bufferMode="NewestOnly",maxattempts=5)
