@@ -11,6 +11,9 @@ function cam_init(;camid::Int64=0,silent=false,bufferMode="NewestOnly")
     else
         !silent && (@info "Selecting camera $camid")
         cam = camlist[camid]
+        !silent && (@info "Switching to continuous mode")
+        acquisitionmode!(cam,"Continuous")
+        triggermode!(cam,"Off")
         !silent && (@info "Reading settings from camera")
         camSettingsRead!(cam,camSettings)
         camSettingsLimitsRead!(cam,camSettingsLimits)
