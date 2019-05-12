@@ -84,11 +84,12 @@ function runCamera()
 
     perfGrabTime = time()
     grabNotRunningTimer = Timer(0.0,interval=1/5)
-    firstframe = true
     while !sessionStat.terminate
         if isrunning(cam)
-            firstframe && (camImage = Array{UInt8}(undef,camSettings.width,camSettings.height))
-            firstframe = false
+            if sessionStat.resolutionupdate
+                camImage = Array{UInt8}(undef,camSettings.width,camSettings.height)
+                sessionStat.resolutionupdate = false
+            end
             try
                 cim_id, cim_timestamp, cim_exposure = getimage!(cam,camImage,normalize=false,timeout=0)
                 if sessionStat.recording
@@ -111,7 +112,6 @@ function runCamera()
             end
             yield()
         else
-            firstframe = true
             wait(grabNotRunningTimer)
             #println("Not running")
         end

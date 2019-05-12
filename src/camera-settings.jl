@@ -180,6 +180,7 @@ function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
                     lastCamSettings.width = camSettings.width
                     lastCamSettings.height = camSettings.height
                     camSettingsLimitsRead!(cam,camSettingsLimits)
+                    sessionStat.resolutionupdate = true
                 catch e
                     @info "Selected width or height not allowed"
                     camSettings.width = lastCamSettings.width

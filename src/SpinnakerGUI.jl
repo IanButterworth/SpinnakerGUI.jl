@@ -6,6 +6,7 @@ Base.@kwdef mutable struct sessionStatus
     savedframes::Int64 = 0
     terminate::Bool = false
     droppedframes::Int64 = 0
+    resolutionupdate::Bool = true
 end
 
 include("utils.jl")
