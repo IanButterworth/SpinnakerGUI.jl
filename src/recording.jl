@@ -9,9 +9,9 @@ Based on https://discourse.julialang.org/t/creating-a-video-from-a-stack-of-imag
 Reference for H.264: https://trac.ffmpeg.org/wiki/Encode/H.264#LosslessH.264
 The range of the compression (CRF) scale is 0–51, where 0 is lossless, 23 is the default, and 51 is worst quality possible
 ```
-function videowritelistener(;compression=0,overwrite=false, options=``)
+function videowritelistener(;compression=0,overwrite=false, options="",threads=0)
 
-    ow = overwrite ? `-y` : `-n`
+    ow = overwrite ? "-y" : "-n"
     preset = (compression == 0) ? "ultrafast" : "medium"
 
     global sessionStat
@@ -32,7 +32,7 @@ function videowritelistener(;compression=0,overwrite=false, options=``)
                 "DYLD_LIBRARY_PATH" => VideoIO.libpath) do
                 open(`$(VideoIO.ffmpeg)
                     -loglevel warning
-                    -threads 2
+                    -threads $threads
                     $ow -f rawvideo -pix_fmt gray -s:v $(h)x$(w)
                     -r $fps -i pipe:0 -c:v libx264 -preset: $preset
                     -crf $compression -pix_fmt yuv422p $options
