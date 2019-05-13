@@ -166,6 +166,7 @@ function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
                     offsetdims!(cam,(camSettings.offsetX,camSettings.offsetY))
                     lastCamSettings.offsetX = camSettings.offsetX
                     lastCamSettings.offsetY = camSettings.offsetY
+                    camSettingsLimitsRead!(cam,camSettingsLimits)
                 catch e
                     #@info "Selected x or y offset not allowed"
                     camSettings.offsetX = lastCamSettings.offsetX
