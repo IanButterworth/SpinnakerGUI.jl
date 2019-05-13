@@ -42,16 +42,16 @@ This function exists because of instability experienced with the Grasshopper 3.
 
 """
 function startcheckrunningfix!(cam;bufferMode="NewestOnly",maxattempts=5)
-    try 
+    try
         start!(cam)
     catch e
         reinitcam(bufferMode=bufferMode,maxattempts=maxattempts)
-    end  
-    if canGetImage(cam) 
+    end
+    if canGetImage(cam)
         @info "Camera started"
     else
         reinitcam(bufferMode=bufferMode,maxattempts=maxattempts)
-    end        
+    end
 end
 
 function reinitcam(;bufferMode="NewestOnly",maxattempts=5)
@@ -70,7 +70,7 @@ function reinitcam(;bufferMode="NewestOnly",maxattempts=5)
         @info "Camera reinitialized"
     end
 end
-    
+
 
 function runCamera()
     global perfGrabFramerate
