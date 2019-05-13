@@ -193,27 +193,28 @@ function ShowControlWindow(p_open::Ref{Bool})
     ## PLAY/PAUSE
     @cstatic begin
         if camIsRunning
-            CImGui.Button("Pause",(200,25)) && stop!(cam)
+            if CImGui.Button("Pause",(200,25))
+                stop!(cam)
+                @info "Camera stopped"
+            end
         else
-            CImGui.Button("Run",(200,25)) && startcheckrunningfix!()
+            if CImGui.Button("Run",(200,25))
+                startcheckrunningfix!(cam)
+            end
         end
     end
 
     ## RECORDING
     @cstatic begin
         if sessionStat.recording
-            if CImGui.Button("Stop Recording",(200,25)) 
+            if CImGui.Button("Stop Recording",(200,25))
                 sessionStat.recording = false
-                #stop!(cam)
-                #buffermode!(cam,"NewestOnly")
-                #startcheckrunningfix!(bufferMode="OldestFirst")
+                buffermode!(cam,"NewestOnly")
             end
         else
             if CImGui.Button("Record",(200,25))
                 sessionStat.recording = true
-                #stop!(cam)
-                #buffermode!(cam,"OldestFirst")
-                #startcheckrunningfix!(bufferMode="OldestFirst")
+                buffermode!(cam,"OldestFirst")
             end
         end
         CImGui.SameLine()

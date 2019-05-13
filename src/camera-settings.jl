@@ -113,7 +113,7 @@ function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
         if isrunning(cam)
 
             # RECORDING
-            
+
             # FRAMERATE
             if (camSettings.acquisitionFramerate != lastCamSettings.acquisitionFramerate)
                 framerate!(cam,camSettings.acquisitionFramerate)
@@ -167,7 +167,7 @@ function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
                     lastCamSettings.offsetX = camSettings.offsetX
                     lastCamSettings.offsetY = camSettings.offsetY
                 catch e
-                    @info "Selected x or y offset not allowed"
+                    #@info "Selected x or y offset not allowed"
                     camSettings.offsetX = lastCamSettings.offsetX
                     camSettings.offsetY = lastCamSettings.offsetY
                 end
@@ -180,8 +180,9 @@ function camSettingsUpdater(;timerInterval::AbstractFloat=1/10)
                     lastCamSettings.width = camSettings.width
                     lastCamSettings.height = camSettings.height
                     camSettingsLimitsRead!(cam,camSettingsLimits)
+                    sessionStat.resolutionupdate = true
                 catch e
-                    @info "Selected width or height not allowed"
+                    #@info "Selected width or height not allowed"
                     camSettings.width = lastCamSettings.width
                     camSettings.height = lastCamSettings.height
                 end
