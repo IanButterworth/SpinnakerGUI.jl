@@ -54,6 +54,11 @@ function gui(;timerInterval::AbstractFloat=1/60)
     # CImGui.StyleColorsClassic()
     # CImGui.StyleColorsLight()
 
+    # Load fonts
+    fonts_dir = joinpath(@__DIR__, "gui", "fonts")
+    fonts = CImGui.GetIO().Fonts
+    CImGui.AddFontFromFileTTF(fonts, joinpath(fonts_dir, "Roboto-Medium.ttf"), 14)
+    
     # load Fonts
     # - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use `CImGui.PushFont/PopFont` to select them.
     # - `CImGui.AddFontFromFileTTF` will return the `Ptr{ImFont}` so you can store it if you need to select the font among multiple.
