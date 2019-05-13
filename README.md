@@ -1,6 +1,6 @@
 # SpinnakerGUI
 
-A `[0CImGui.jl](https://github.com/Gnimuc/CImGui.jl)`-based GUI for controlling FLIR/PointGrey cameras through the Spinnaker API via [Spinnaker.jl](https://github.com/samuelpowell/Spinnaker.jl)
+A [CImGui.jl](https://github.com/Gnimuc/CImGui.jl)-based GUI for controlling FLIR/PointGrey cameras through the Spinnaker API via [Spinnaker.jl](https://github.com/samuelpowell/Spinnaker.jl)
 
 ![](SpinnakerGUI%20Screenshot.png)
 
