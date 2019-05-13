@@ -7,7 +7,7 @@ control_no_titlebar = false
 control_no_scrollbar = true
 control_no_menu = true
 control_no_move = false
-control_no_resize = true
+control_no_resize = false
 control_no_collapse = false
 control_no_close = true
 control_no_nav = true
@@ -42,8 +42,8 @@ function ShowControlWindow(p_open::Ref{Bool})
 
     # specify a default position/size in case there's no data in the .ini file.
     # typically this isn't required! we only do it to make the Demo applications a little more welcoming.
-    CImGui.SetNextWindowPos((650, 20), CImGui.ImGuiCond_FirstUseEver)
-    CImGui.SetNextWindowSize((550, 680), CImGui.ImGuiCond_FirstUseEver)
+    CImGui.SetNextWindowPos((1280-550-20, 20), CImGui.ImGuiCond_FirstUseEver)
+    CImGui.SetNextWindowSize((550, 310), CImGui.ImGuiCond_FirstUseEver)
 
     CImGui.Begin("Control", p_open, window_flags) || (CImGui.End(); return)
     CImGui.Text("ImGui $(CImGui.IMGUI_VERSION)")

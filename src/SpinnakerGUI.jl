@@ -44,7 +44,7 @@ perfGrabFramerate = 0.0
 include("gui.jl")
 include("recording.jl")
 
-function start(;camid::Int64=0,recordthreads=0)
+function start(;camid::Int64=0,recordthreads=0,reccompression=0)
     global cam, gui_open
     global sessionStat
     global camImageFrameBuffer
@@ -68,7 +68,7 @@ function start(;camid::Int64=0,recordthreads=0)
 
     # Start recording listener
     @info "Starting recording listener (async)"
-    t_recorder = @async_errhandle videowritelistener(threads=recordthreads)
+    t_recorder = @async_errhandle videowritelistener(threads=recordthreads,compression=reccompression)
 
     # Run camera control with priority
     @info "Starting Camera Acquisition (async)"

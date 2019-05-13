@@ -58,7 +58,7 @@ function gui(;timerInterval::AbstractFloat=1/60)
     fonts_dir = joinpath(@__DIR__, "gui", "fonts")
     fonts = CImGui.GetIO().Fonts
     CImGui.AddFontFromFileTTF(fonts, joinpath(fonts_dir, "Roboto-Medium.ttf"), 14)
-    
+
     # load Fonts
     # - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use `CImGui.PushFont/PopFont` to select them.
     # - `CImGui.AddFontFromFileTTF` will return the `Ptr{ImFont}` so you can store it if you need to select the font among multiple.
@@ -103,6 +103,12 @@ function gui(;timerInterval::AbstractFloat=1/60)
             gui_open = true
 
             control_open && @c ShowControlWindow(&control_open)
+
+            # specify a default position/size in case there's no data in the .ini file.
+            # typically this isn't required! we only do it to make the Demo applications a little more welcoming.
+            CImGui.SetNextWindowPos((20, 20), CImGui.ImGuiCond_FirstUseEver)
+            CImGui.SetNextWindowSize((1280-550-20-20-20, 720-20-20), CImGui.ImGuiCond_FirstUseEver)
+
 
             # show image example
             CImGui.Begin("Raw Video Preview")
