@@ -95,7 +95,7 @@ function runCamera()
             try
                 cim_id, cim_timestamp, cim_exposure = getimage!(cam,camImage,normalize=false,timeout=0)
                 if sessionStat.recording
-                    push!(camImageFrameBuffer,camImage)
+                    push!(camImageFrameBuffer,copy(camImage))
                     sessionStat.bufferedframes = length(camImageFrameBuffer)
                     sessionStat.droppedframes = bufferunderrun(cam)
                 end
