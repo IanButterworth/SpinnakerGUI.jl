@@ -21,8 +21,8 @@ camGPIO = GPIO()
 camGPIOLimits = GPIOLimits()
 
 # Load camera framework
-ENV["USE_DUMMYCAM"] = 0         #Force dummycam
-@static if Sys.isapple() || ENV["USE_DUMMYCAM"]=="1"  # Spinnaker not currently available for MacOS or CI testing
+ENV["USE_DUMMYCAM"] = 0
+@static if ENV["USE_DUMMYCAM"]=="1"
     include("camera-dummy.jl")
 else
     include("camera-spinnaker.jl")
