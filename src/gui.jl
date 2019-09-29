@@ -182,7 +182,8 @@ function gui(;timerInterval::AbstractFloat=1/60)
     ImGui_ImplOpenGL3_Shutdown()
     ImGui_ImplGlfw_Shutdown()
     CImGui.DestroyContext(ctx)
-
     GLFW.DestroyWindow(window)
+    # Needed on macOS? https://github.com/glfw/glfw/issues/1412
+    GLFW.PollEvents()
     gui_open = false
 end
