@@ -19,11 +19,11 @@ function gui(;timerInterval::AbstractFloat=1/60)
     @static if Sys.isapple()
         # GL_LUMINANCE not available >= 3.0
         # OpenGL 2.1 + GLSL 120
-        glsl_version = 120
-        GLFW.WindowHint(GLFW.CONTEXT_VERSION_MAJOR, 2)
-        GLFW.WindowHint(GLFW.CONTEXT_VERSION_MINOR, 1)
-        #GLFW.WindowHint(GLFW.OPENGL_PROFILE, GLFW.OPENGL_CORE_PROFILE) # 3.2+ only
-        #GLFW.WindowHint(GLFW.OPENGL_FORWARD_COMPAT, GL_TRUE) # required on Mac 3.0+ only
+        glsl_version = 330
+        GLFW.WindowHint(GLFW.CONTEXT_VERSION_MAJOR, 3)
+        GLFW.WindowHint(GLFW.CONTEXT_VERSION_MINOR, 3)
+        GLFW.WindowHint(GLFW.OPENGL_FORWARD_COMPAT, GL_TRUE)
+        GLFW.WindowHint(GLFW.OPENGL_PROFILE, GLFW.OPENGL_CORE_PROFILE) # 3.2+ only
     else
         # OpenGL 3.0 + GLSL 130
         glsl_version = 120
@@ -124,9 +124,11 @@ function gui(;timerInterval::AbstractFloat=1/60)
 
             if camImageSize != previousSize || firstLoop # creat texture for image drawing
                 image_id = ImGui_ImplOpenGL3_CreateImageTexture(camImageSize[1], camImageSize[2])
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_RED)
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED)
                 previousSize = camImageSize
             end
-            ImGui_ImplOpenGL3_UpdateImageTexture(image_id, local_camImage, camImageSize[1], camImageSize[2],format=GL_LUMINANCE,type=GL_UNSIGNED_BYTE)
+            ImGui_ImplOpenGL3_UpdateImageTexture(image_id, local_camImage, camImageSize[1], camImageSize[2],format=GL_RED, type=GL_UNSIGNED_BYTE)
             if previewWindowAspect > camImageAspect
                 previewImageHeight = previewWindowHeight
                 previewImageWidth = previewImageHeight * camImageAspect
