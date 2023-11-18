@@ -14,5 +14,6 @@ Spinnaker = "8e0d2ad3-56b8-53f3-8036-54b674872bef"
 VideoIO = "d6d074c3-1acf-5d4c-9a43-ef38773959a2"
 
 [compat]
+CImGui = "~1.79"
 VideoIO = "≥ 0.6.2"
 julia = "≥ 1.0.0"
